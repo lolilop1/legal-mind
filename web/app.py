@@ -32,6 +32,9 @@ from modules.uk.pdf import generate_pdf as pdf_uk
 from modules.noise.hardchecks import hard_pre_check as hardcheck_noise
 from modules.noise.pdf import generate_pdf as pdf_noise
 
+from modules.uk.pre_checks import run_uk_pre_checks
+from modules.noise.pre_checks import run_noise_pre_checks
+
 from core.name_declension import decline_fio
 from core.phone_check import validate_phone
 from core.llm import call_alice_flash
