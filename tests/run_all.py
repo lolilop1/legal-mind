@@ -21,6 +21,7 @@ _TESTS = [
     "test_case_id.py",
     "test_case_db.py",
     "test_address.py",
+    "test_pre_checks.py",
 ]
 
 
