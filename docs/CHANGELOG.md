@@ -1,5 +1,18 @@
-﻿# Legal Mind — Changelog
+﻿## 2026-09-11 (этап 4: Confidence / UNKNOWN)
 
+### Добавлено
+- `core/pre_checks.py` — универсальная модель CheckItem/PreCheckReport
+- `modules/uk/pre_checks.py` — проверки для жалобы в УК
+- `modules/noise/pre_checks.py` — проверки для жалобы на шум
+- Экран `pre_check_blocked.html` — «Что знаем / Чего не хватает»
+- `case.html` — блок «Что знаем» в карточке дела
+- Pre-check при стопе: если hard-check дал vague-стоп, но pre-check
+  собрал полезный отчёт — показываем его вместо сухого stop.html
+
+### Тесты
+- `test_pre_checks.py` — 17 проверок
+
+---
 ## 2026-09-11 (вечер)
 
 ### Модульность
