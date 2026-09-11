@@ -34,6 +34,7 @@ from modules.noise.pdf import generate_pdf as pdf_noise
 
 from modules.uk.pre_checks import run_uk_pre_checks
 from modules.noise.pre_checks import run_noise_pre_checks
+from core.trace import build_trace
 
 from core.name_declension import decline_fio
 from core.phone_check import validate_phone
@@ -416,7 +417,7 @@ def _build_dna(problem_type: str, user_data: dict, result: dict, precheck=None) 
         "demand": None,
         "evidence": None,
         "confidence": precheck.to_dict() if precheck else None,
-        "trace": None,
+        "trace": _build_trace_dict(problem_type, user_data, result),
     }
 
     if problem_type == "uk":
@@ -711,3 +712,29 @@ def health():
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000)
+
+
+def _build_trace_dict(problem_type: str, user_data: dict, result: dict) -> dict | None:
+    """Собирает Legal Trace для DNA."""
+    try:
+        if problem_type == "uk":
+            norms = result.get("parsed", {}).get("применимые_нормы") or []
+            source = ""
+        elif problem_type == "noise":
+            ld = result.get("law_data") or {}
+            norms = [ld["закон"]] if ld.get("закон") else []
+            source = ld.get("url", "")
+        else:
+            norms = []
+            source = ""
+
+        trace = build_trace(
+            problem_type=problem_type,
+            problem_text=user_data.get("проблема", ""),
+            norms=norms,
+            source=source,
+        )
+        return trace.to_dict() if not trace.is_empty() else None
+    except Exception as e:
+        log.warning("build_trace упал: %s", e)
+        return None

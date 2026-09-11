@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
@@ -54,13 +54,40 @@
     </table>
   </div>
 
-  {% if case.trace and case.trace.закон %}
+  {% if case.trace and case.trace.norms %}
   <div class="case-section">
-    <h2>Применимая норма</h2>
-    <p>{{ case.trace.закон }}</p>
-    {% if case.trace.источник %}
-    <p class="case-source">Источник: <a href="{{ case.trace.источник }}" target="_blank">{{ case.trace.источник }}</a></p>
-    {% endif %}
+    <h2>Как система пришла к норме</h2>
+    <div class="trace-chain">
+      <div class="trace-step">
+        <div class="trace-label">Факт</div>
+        <div class="trace-value">{{ case.trace.fact }}</div>
+      </div>
+      <div class="trace-arrow">↓</div>
+      <div class="trace-step">
+        <div class="trace-label">Квалификация</div>
+        <div class="trace-value">{{ case.trace.qualification }}</div>
+      </div>
+      <div class="trace-arrow">↓</div>
+      <div class="trace-step">
+        <div class="trace-label">Применимые нормы</div>
+        <div class="trace-value">
+          {% for norm in case.trace.norms %}
+          <div class="trace-norm">{{ norm }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% if case.trace.source %}
+      <div class="trace-arrow">↓</div>
+      <div class="trace-step">
+        <div class="trace-label">Источник</div>
+        <div class="trace-value">
+          <a href="{{ case.trace.source }}" target="_blank" class="trace-source-link">{{ case.trace.source }}</a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
   </div>
   {% endif %}
 

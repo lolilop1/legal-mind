@@ -1,4 +1,4 @@
-﻿* { box-sizing: border-box; }
+* { box-sizing: border-box; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -595,4 +595,51 @@ textarea::placeholder {
 
 .case-precheck .precheck-mark {
   width: 18px;
+}
+/* ─── Legal Trace: цепочка ─── */
+.trace-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+}
+
+.trace-step {
+  padding: 8px 0;
+}
+
+.trace-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.trace-value {
+  font-size: 14px;
+  color: #1a1a1a;
+  line-height: 1.5;
+}
+
+.trace-arrow {
+  text-align: center;
+  color: #ccc;
+  font-size: 14px;
+  padding: 2px 0;
+}
+
+.trace-norm {
+  padding: 2px 0;
+}
+
+.trace-source-link {
+  color: #2f6df5;
+  text-decoration: none;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.trace-source-link:hover {
+  text-decoration: underline;
 }
