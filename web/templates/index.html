@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Legal Mind — составление заявления</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+
+  <div class="top-bar">
+    <div class="brand">
+      <span class="brand-name">Legal Mind</span>
+      <span class="brand-tag">юридический процессор</span>
+    </div>
+    <div class="top-nav">
+      {% if my_cases_count > 0 %}
+      <a href="/my" class="top-link">Мои дела ({{ my_cases_count }})</a>
+      {% else %}
+      <a href="/my" class="top-link top-link-muted">Мои дела</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <p class="subtitle">Составление юридического документа за 1 минуту</p>
+
+  <div class="disclaimer">
+    <strong>Не является юридической услугой.</strong>
+    Сервис помогает оформить текст заявления. Ответственность за содержание
+    документа несёт пользователь. В экстренных случаях звоните 112.
+  </div>
+
+  {% if errors %}
+  <div class="form-errors">
+    <strong>Проверьте форму:</strong>
+    <ul>
+      {% for err in errors %}<li>{{ err }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <form method="post" action="/submit" novalidate>
+
+    <label>Тип проблемы</label>
+    <select name="problem_type" required>
+      <option value="uk" {% if form_data and form_data.get('problem_type') == 'uk' %}selected{% endif %}>Проблема с управляющей компанией (уборка, отопление, лифт, крыша и т.п.)</option>
+      <option value="noise" {% if form_data and form_data.get('problem_type') == 'noise' %}selected{% endif %}>Нарушение тишины (музыка, ремонт, крики, лай собаки и т.п.)</option>
+    </select>
+
+    <label>Опишите проблему</label>
+    <textarea name="проблема" rows="5" required placeholder="Например: в подъезде не убирают уже две недели, грязь и мусор в углах">{{ form_data.get('проблема', '') if form_data else '' }}</textarea>
+
+    <label>Адрес</label>
+    <input type="text" name="адрес" required placeholder="г. Москва, ул. Ленина, д. 15, кв. 42" value="{{ form_data.get('адрес', '') if form_data else '' }}">
+
+    <label>Когда началось</label>
+    <input type="text" name="дата_начала" placeholder="например: около двух недель назад" value="{{ form_data.get('дата_начала', '') if form_data else '' }}">
+
+    <label>Обращались ли ранее</label>
+    <input type="text" name="обращались_ранее" placeholder="например: да, 01.08.2026, ответа не было" value="{{ form_data.get('обращались_ранее', '') if form_data else '' }}">
+
+    <label>ФИО</label>
+    <input type="text" name="фио" required placeholder="Иванов Иван Иванович" value="{{ form_data.get('фио', '') if form_data else '' }}">
+
+    <label>Контактный телефон</label>
+    <input type="text" name="телефон" required placeholder="+7 (999) 123-45-67" value="{{ form_data.get('телефон', '') if form_data else '' }}">
+
+    <label>Организация (кому адресуем)</label>
+    <input type="text" name="organization" placeholder="ООО «УК Жилищник-1» или «Начальнику ОВД по району»" value="{{ form_data.get('organization', '') if form_data else '' }}">
+
+    <button type="submit">Составить заявление (PDF)</button>
+  </form>
+
+  <p class="footer">
+    Сервис работает на Alice AI. Проверка экстренности и маршрутизация — на стороне сервера.
+  </p>
+
+</div>
+</body>
+</html>

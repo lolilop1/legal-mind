@@ -1,0 +1,95 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Дело {{ case.case_number }} — Legal Mind</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+
+  <div class="top-bar">
+    <div class="brand">
+      <span class="brand-name">Legal Mind</span>
+    </div>
+    <div class="top-nav">
+      <a href="/my" class="top-link">Все дела</a>
+      <a href="/" class="top-link">Новое заявление</a>
+    </div>
+  </div>
+
+  <div class="case-header">
+    <h1>{{ case.case_number }}</h1>
+    <p class="case-date">Создано: {{ case.created_at }}</p>
+  </div>
+
+  <div class="case-section">
+    <h2>Что известно</h2>
+    <table class="case-table">
+      <tr>
+        <td>Тип проблемы</td>
+        <td><strong>{{ case.problem_type | problem_label }}</strong></td>
+      </tr>
+      {% if case.subject %}
+      <tr><td>Субъект</td><td>{{ case.subject }}</td></tr>
+      {% endif %}
+      {% if case.object %}
+      <tr><td>Объект</td><td>{{ case.object }}</td></tr>
+      {% endif %}
+      {% if case.event %}
+      <tr><td>Событие</td><td>{{ case.event }}</td></tr>
+      {% endif %}
+      {% if case.jurisdiction %}
+      <tr><td>Регион</td><td><strong>{{ case.jurisdiction }}</strong></td></tr>
+      {% endif %}
+      {% if case.counterparty %}
+      <tr><td>Против кого</td><td>{{ case.counterparty }}</td></tr>
+      {% endif %}
+      {% if case.demand %}
+      <tr><td>Требование</td><td>{{ case.demand }}</td></tr>
+      {% endif %}
+      {% if case.amount %}
+      <tr><td>Сумма</td><td>{{ case.amount }} ₽</td></tr>
+      {% endif %}
+    </table>
+  </div>
+
+  {% if case.trace and case.trace.закон %}
+  <div class="case-section">
+    <h2>Применимая норма</h2>
+    <p>{{ case.trace.закон }}</p>
+    {% if case.trace.источник %}
+    <p class="case-source">Источник: <a href="{{ case.trace.источник }}" target="_blank">{{ case.trace.источник }}</a></p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="case-section">
+    <h2>Документы</h2>
+    {% if documents %}
+    <ul class="case-docs">
+      {% for doc in documents %}
+      <li>
+        <span class="doc-type">{{ doc.doc_type | doc_label }}</span>
+        <span class="doc-date">{{ doc.generated_at }}</span>
+        <a class="doc-link" href="/case/{{ case_ref }}/pdf/{{ doc.id }}">Скачать PDF</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="case-empty">Документы ещё не сгенерированы.</p>
+    {% endif %}
+  </div>
+
+  <div class="case-section">
+    <h2>Исходное описание</h2>
+    <p class="case-source-text">{{ case.source_text }}</p>
+  </div>
+
+  <div class="case-footer">
+    <a href="/my">← Все мои дела</a>
+  </div>
+
+</div>
+</body>
+</html>

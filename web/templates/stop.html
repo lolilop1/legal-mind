@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>{{ title }} — Legal Mind</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+
+  <div class="top-bar">
+    <div class="brand">
+      <span class="brand-name">Legal Mind</span>
+      <span class="brand-tag">юридический процессор</span>
+    </div>
+    <div class="top-nav">
+      <a href="/my" class="top-link">Мои дела</a>
+      <a href="/" class="top-link">Новое заявление</a>
+    </div>
+  </div>
+
+  {% if emergency %}
+  <div class="stop-emergency">
+    <div class="stop-emergency-icon">⚠</div>
+    <h1 class="stop-title">Экстренная ситуация</h1>
+    <p class="stop-reason">{{ reason }}</p>
+    <a href="tel:112" class="stop-call-btn">📞 Позвонить 112</a>
+  </div>
+  {% else %}
+  <h1 class="stop-title">{{ title }}</h1>
+  <p class="stop-reason">{{ reason }}</p>
+  {% endif %}
+
+  <div class="stop-actions">
+    <a href="/" class="stop-back-btn">← Вернуться к форме</a>
+  </div>
+
+</div>
+</body>
+</html>

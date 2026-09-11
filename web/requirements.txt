@@ -1,0 +1,8 @@
+Flask>=3.0
+openai>=1.50
+fpdf2>=2.7
+python-dotenv>=1.0
+gunicorn>=21.0
+pymorphy3>=2.0
+pymorphy3-dicts-ru
+requests>=2.31

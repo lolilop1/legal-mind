@@ -1,0 +1,57 @@
+﻿# ─── Секреты и ключи ───
+.env
+*.env
+!.env.example
+web/.env
+
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+
+# ─── IDE ───
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Данные и бэкапы ───
+# CASE база — генерируется, не в git
+web/cases.db
+web/cases.db-journal
+
+# Бэкапы БД
+*.backup
+*.db-journal
+
+# ─── Артефакты тестов и отладки ───
+results_*.json
+adversarial_results.json
+test_pdf_output/
+test_module3_output/
+batch_pdf_output/
+tests/test_pdf_output/
+logs/
+
+# ─── Временные файлы ───
+_index_files/
+debug_*.py
+
+# ─── Архив старого ───
+_archive/
+
+# ─── Разовое ───
+reorganize.ps1
+reorganize2.ps1
+"Текстовый документ.txt"
