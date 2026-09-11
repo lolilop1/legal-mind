@@ -1,4 +1,4 @@
-﻿"""Legal Mind — Web application.
+"""Legal Mind — Web application.
 
 v3.1: session-based "my cases" list.
 """
@@ -518,6 +518,23 @@ def submit():
         log_event(problem_type, len(user_data["проблема"]),
                   result.get("stop_kind") or "hard_check", False, False)
         _save_form_to_session(request.form)
+
+        # Перед обычным стопом попробуем pre-check
+        if not result.get("emergency"):
+            try:
+                if problem_type == "uk":
+                    precheck_on_stop = run_uk_pre_checks(user_data)
+                else:
+                    precheck_on_stop = run_noise_pre_checks(user_data, extras={})
+                if precheck_on_stop.is_blocked and precheck_on_stop.known:
+                    return render_template(
+                        "pre_check_blocked.html",
+                        known=precheck_on_stop.known,
+                        missing_critical=precheck_on_stop.missing_critical,
+                        missing_optional=precheck_on_stop.missing_optional,
+                    )
+            except Exception as e:
+                log.warning("pre-check on stop failed: %s", e)
         return render_template("stop.html",
                                title="Документ не составлен",
                                reason=result["reason"],
