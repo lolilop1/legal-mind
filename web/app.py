@@ -50,6 +50,10 @@ API_KEY = os.getenv("YANDEX_API_KEY", "")
 FOLDER_ID = os.getenv("YANDEX_FOLDER_ID", "")
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 
+# --- Версии правил и шаблонов ---
+RULES_DATE = "2026.09"
+TEMPLATE_VERSION = "1.0"
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -556,12 +560,18 @@ def submit():
             "описание_проблемы_формальное": parsed["описание_проблемы_формальное"],
             "упоминание_повторного_обращения": parsed.get("упоминание_повторного_обращения", ""),
             "применимые_нормы": parsed.get("применимые_нормы") or ALLOWED_UK_NORMS,
+            "engine_version": _build_engine_version(problem_type),
+            "rules_date": RULES_DATE,
+            "template_version": TEMPLATE_VERSION,
         }
         extra_log = ""
     else:
         law_data = result.get("law_data")
         normalized = {
             "описание_проблемы_формальное": parsed["описание_проблемы_формальное"],
+            "engine_version": _build_engine_version(problem_type),
+            "rules_date": RULES_DATE,
+            "template_version": TEMPLATE_VERSION,
         }
         if law_data:
             normalized["применимая_норма"] = law_data["закон"]

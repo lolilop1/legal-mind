@@ -81,6 +81,24 @@
     {% endif %}
   </div>
 
+  {% if case.engine_version or case.rules_version or case.template_version %}
+  <div class="case-section">
+    <h2>Версия документа</h2>
+    <table class="case-table">
+      {% if case.engine_version %}
+      <tr><td>Движок</td><td><code>{{ case.engine_version }}</code></td></tr>
+      {% endif %}
+      {% if case.rules_version %}
+      <tr><td>Правила</td><td><code>{{ case.rules_version }}</code></td></tr>
+      {% endif %}
+      {% if case.template_version %}
+      <tr><td>Шаблон</td><td><code>{{ case.template_version }}</code></td></tr>
+      {% endif %}
+      <tr><td>Создано</td><td>{{ case.created_at }}</td></tr>
+    </table>
+  </div>
+  {% endif %}
+
   <div class="case-section">
     <h2>Исходное описание</h2>
     <p class="case-source-text">{{ case.source_text }}</p>

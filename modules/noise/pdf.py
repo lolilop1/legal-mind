@@ -1,4 +1,4 @@
-"""Legal Mind — Module 3: PDF generation for noise complaints.
+﻿"""Legal Mind — Module 3: PDF generation for noise complaints.
 
 v3: uses list format for the legal reference (aligned with module 2).
 """
@@ -126,6 +126,25 @@ def generate_pdf(output_path: str, requisites: dict, normalized: dict) -> str:
     _mc(pdf, 6, f"Дата: {date_str}", align="L")
     pdf.ln(2)
     _mc(pdf, 6, "Подпись: ___________________", align="L")
+
+    # --- Подвал с версией документа ---
+    engine = (normalized.get("engine_version") or "").strip()
+    rules = (normalized.get("rules_date") or "").strip()
+    template = (normalized.get("template_version") or "").strip()
+    if engine or rules or template:
+        pdf.ln(10)
+        pdf.set_font(family, style="", size=8)
+        parts = []
+        if engine:
+            parts.append(f"движок {engine}")
+        if rules:
+            parts.append(f"правила {rules}")
+        if template:
+            parts.append(f"шаблон {template}")
+        footer = "Сгенерировано алгоритмом Legal Mind · " + " · ".join(parts)
+        pdf.set_text_color(120, 120, 120)
+        _mc(pdf, 4, footer, align="L")
+        pdf.set_text_color(0, 0, 0)
 
     pdf.output(output_path)
     return output_path
