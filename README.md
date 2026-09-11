@@ -1,4 +1,4 @@
-# Legal Mind
+﻿# Legal Mind
 
 Веб-сервис для физических лиц. Превращает неформальное описание бытовой проблемы в готовый юридический документ (PDF).
 
@@ -80,3 +80,19 @@ ssh root@201.24.49.121, systemctl status legal-mind.
 ## Ссылки
 
 STATUS.md, ROADMAP.md, docs/.
+
+---
+
+## 🔒 Безопасность
+
+- **Секреты** (API-ключи Yandex Cloud) хранятся только в `web/.env`, файл в `.gitignore`, в git никогда не попадал
+- **На сервере** права: `chmod 600 web/.env`, владелец `legal:legal` (не root)
+- **Деплой** через Deploy Key с read-only доступом
+- **CI/CD** — секреты через GitHub Secrets
+- **База** `cases.db` и `logs/` не коммитятся
+
+Быстрая проверка локально:
+
+    git ls-files | Select-String "\.env"    # должно быть пусто
+    Test-Path .gitignore                    # должно быть True
+
