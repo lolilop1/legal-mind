@@ -40,7 +40,7 @@
 - core/labels.py
 - QR в PDF (после домена)
 
-## Этап 4 — Confidence / UNKNOWN ⏳
+## Этап 4 — Confidence / UNKNOWN ✅
 
 - run_pre_checks()
 - Экран «что знаем / чего нет»
