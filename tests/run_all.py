@@ -1,4 +1,4 @@
-﻿"""Run all tests in tests/ with correct sys.path + summary.
+"""Run all tests in tests/ with correct sys.path + summary.
 
 Usage (from project root):
     python tests/run_all.py
@@ -30,6 +30,7 @@ _TESTS = [
     "test_case_db.py",
     "test_address.py",
     "test_pre_checks.py",
+    "test_trace.py",
 ]
 
 # Паттерны для извлечения "Total: X Passed: Y Failed: Z"
