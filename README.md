@@ -1,8 +1,9 @@
-﻿# Legal Mind
+# Legal Mind
 
 Веб-сервис для физических лиц. Превращает неформальное описание бытовой проблемы в готовый юридический документ (PDF).
 
 **Работает:** http://201.24.49.121/
+**Репозиторий:** https://github.com/lolilop1/legal-mind (приватный)
 **Домен:** legalmind.su (ждёт оплаты)
 
 ## Что работает
@@ -17,15 +18,31 @@
 
 Музыка, ремонт, крики, лай собаки, топот, вечеринки.
 
-Нормы: региональные (85 субъектов в region/data/noise_laws.db). Регион определяется гибридно: regex (26 паттернов) + embeddings (fallback).
+Нормы: региональные (85 субъектов в region/data/noise_laws.db). Регион определяется гибридно: regex + embeddings.
 
-### CASE-хранилище
+### Confidence / UNKNOWN (этап 4)
+
+Pre-checks показывают что система поняла и чего не хватает. Если критичное отсутствует — блокируем генерацию и показываем экран «Не хватает данных».
+
+### Legal Trace (этап 5)
+
+Цепочка «Факт → Квалификация → Норма → Источник». Показывается в карточке дела.
+
+### Версионность (этап 6)
+
+В PDF-подвале и карточке дела: движок, правила, шаблон.
+
+### CASE-хранилище (этап 3)
 
 Каждое заявление сохраняется в SQLite. Номер: LM-YYYYMMDD-NNNN, доступ по паре номер+UUID. Экран /my — список дел, /case/... — карточка.
 
+### Автодеплой (этап 8)
+
+git push → GitHub Actions → SSH на VPS → git pull → restart → health check.
+
 ## Архитектура
 
-Пользователь → nginx → Flask → валидация → hard-check → Alice AI Flash → entity check → PDF → CASE.
+Пользователь → nginx → Flask → валидация → hard-check → Alice AI Flash → entity check → pre-check → PDF → CASE.
 
 Принцип: если что-то можно проверить кодом — проверяем кодом.
 
@@ -40,7 +57,7 @@ Python 3.14, Flask, gunicorn, nginx, systemd, fpdf2, pymorphy3, Alice AI Flash, 
 - modules/ — uk, noise, consumer
 - web/ — Flask
 - scripts/ — разовые утилиты
-- tests/ — 10 файлов, 196 проверок
+- tests/ — 12 файлов, 229 проверок
 - docs/ — документация
 - deploy/ — инфраструктура
 
@@ -48,11 +65,9 @@ Python 3.14, Flask, gunicorn, nginx, systemd, fpdf2, pymorphy3, Alice AI Flash, 
 
 Полная инструкция — docs/SETUP.md.
 
-Установка: pip install -r web/requirements.txt, заполнить web/.env, запустить python web/app.py.
-
 ## Деплой
 
-.\deploy\deploy.ps1
+git push — автодеплой за 30 секунд.
 
 ## Управление на сервере
 
@@ -60,8 +75,8 @@ ssh root@201.24.49.121, systemctl status legal-mind.
 
 ## Roadmap
 
-См. ROADMAP.md. Ближайшее: домен legalmind.su + HTTPS, Модуль 1 (Потребитель), обкатка.
+См. ROADMAP.md. Ближайшее: Модуль 1 (Потребитель), домен legalmind.su.
 
 ## Ссылки
 
-STATUS.md, ROADMAP.md, docs/DECISIONS.md, docs/ARCHITECTURE.md, docs/MODULES.md, docs/SETUP.md, docs/CHANGELOG.md.
+STATUS.md, ROADMAP.md, docs/.
