@@ -504,3 +504,95 @@ textarea::placeholder {
   color: #b0b6bd;
   font-style: italic;
 }
+/* ─── Pre-check блоки (Confidence / UNKNOWN) ─── */
+.precheck-section {
+  margin: 24px 0;
+}
+
+.precheck-heading {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #555;
+  margin: 0 0 12px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.precheck-heading-critical {
+  color: #b71c1c;
+  border-bottom-color: #ffcdd2;
+}
+
+.precheck-heading-optional {
+  color: #888;
+}
+
+.precheck-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.precheck-list li {
+  padding: 8px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.precheck-mark {
+  display: inline-block;
+  width: 20px;
+  font-weight: bold;
+}
+
+.precheck-known .precheck-mark {
+  color: #2e7d32;
+}
+
+.precheck-critical .precheck-mark {
+  color: #d32f2f;
+}
+
+.precheck-optional .precheck-mark {
+  color: #999;
+}
+
+.precheck-hint {
+  color: #888;
+  font-size: 13px;
+  margin: 4px 0 0 20px;
+}
+
+/* ─── Блок pre-checks на карточке дела ─── */
+.case-precheck {
+  background: #f8f9fb;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.case-precheck h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #555;
+  margin: 0 0 10px 0;
+}
+
+.case-precheck ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.case-precheck li {
+  padding: 2px 0;
+}
+
+.case-precheck .precheck-mark {
+  width: 18px;
+}

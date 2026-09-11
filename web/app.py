@@ -397,7 +397,7 @@ def _make_pdf_response(pdf_bytes: bytes):
     )
 
 
-def _build_dna(problem_type: str, user_data: dict, result: dict) -> dict:
+def _build_dna(problem_type: str, user_data: dict, result: dict, precheck=None) -> dict:
     dna = {
         "subject": None,
         "object": None,
@@ -408,7 +408,7 @@ def _build_dna(problem_type: str, user_data: dict, result: dict) -> dict:
         "jurisdiction": result.get("region"),
         "demand": None,
         "evidence": None,
-        "confidence": None,
+        "confidence": precheck.to_dict() if precheck else None,
         "trace": None,
     }
 
@@ -549,10 +549,38 @@ def submit():
         law_status = "law=yes" if law_data else "law=no"
         extra_log = f"region={region} | {law_status}"
 
+    # ─── Pre-checks (Confidence / UNKNOWN) ───
+    if problem_type == "uk":
+        precheck = run_uk_pre_checks(user_data)
+    else:
+        precheck = run_noise_pre_checks(
+            user_data,
+            extras={
+                "region": result.get("region"),
+                "law_data": result.get("law_data"),
+            },
+        )
+
+    if precheck.is_blocked:
+        log_event(
+            problem_type,
+            len(user_data["проблема"]),
+            "precheck_blocked",
+            result.get("retried", False),
+            False,
+        )
+        _save_form_to_session(request.form)
+        return render_template(
+            "pre_check_blocked.html",
+            known=precheck.known,
+            missing_critical=precheck.missing_critical,
+            missing_optional=precheck.missing_optional,
+        )
+
     pdf_bytes = _make_pdf_bytes(problem_type, requisites, normalized)
 
     try:
-        dna = _build_dna(problem_type, user_data, result)
+        dna = _build_dna(problem_type, user_data, result, precheck)
         case_info = case_db.create_case(
             problem_type=problem_type,
             source_text=user_data["проблема"],

@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Не хватает данных — Legal Mind</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+
+  <div class="top-bar">
+    <div class="brand">
+      <span class="brand-name">Legal Mind</span>
+      <span class="brand-tag">юридический процессор</span>
+    </div>
+    <div class="top-nav">
+      <a href="/my" class="top-link">Мои дела</a>
+      <a href="/" class="top-link">Новое заявление</a>
+    </div>
+  </div>
+
+  <h1 class="stop-title">Не хватает данных</h1>
+  <p class="stop-reason">
+    Чтобы составить заявление, нужно уточнить критичные детали.
+  </p>
+
+  {% if known %}
+  <div class="precheck-section">
+    <h2 class="precheck-heading">Что уже понятно</h2>
+    <ul class="precheck-list precheck-known">
+      {% for item in known %}
+      <li><span class="precheck-mark">✓</span> <strong>{{ item.label }}:</strong> {{ item.value }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if missing_critical %}
+  <div class="precheck-section">
+    <h2 class="precheck-heading precheck-heading-critical">Чего не хватает</h2>
+    <ul class="precheck-list precheck-critical">
+      {% for item in missing_critical %}
+      <li>
+        <span class="precheck-mark">⚠</span> <strong>{{ item.label }}</strong>
+        {% if item.hint %}<div class="precheck-hint">{{ item.hint }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if missing_optional %}
+  <div class="precheck-section">
+    <h2 class="precheck-heading precheck-heading-optional">Желательно, но не обязательно</h2>
+    <ul class="precheck-list precheck-optional">
+      {% for item in missing_optional %}
+      <li>
+        <span class="precheck-mark">•</span> <strong>{{ item.label }}</strong>
+        {% if item.hint %}<div class="precheck-hint">{{ item.hint }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="stop-actions">
+    <a href="/" class="stop-back-btn">← Вернуться к форме</a>
+  </div>
+
+</div>
+</body>
+</html>
