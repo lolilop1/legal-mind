@@ -1,4 +1,4 @@
-﻿# Legal Mind — Setup
+# Legal Mind — Setup
 
 Инструкция развернуть проект локально и на сервере.
 
@@ -18,16 +18,20 @@
 Ключи в web/.env:
 YANDEX_API_KEY, YANDEX_FOLDER_ID, AI_STUDIO_INDEX_ID, SECRET_KEY.
 
-SECRET_KEY генерируется: python -c "import secrets; print(secrets.token_hex(32))"
+SECRET_KEY генерируется:
+python -c "import secrets; print(secrets.token_hex(32))"
 
 ## Локальная установка
 
-1. Клонирование: git clone <repo> legal_mind && cd legal_mind
+1. Клонирование:
+   git clone https://github.com/lolilop1/legal-mind.git
+   cd legal-mind
 
 2. Виртуальное окружение:
    python -m venv venv
    .\venv\Scripts\Activate.ps1
-   (если политика блокирует: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass)
+   (если политика блокирует:
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass)
 
 3. Зависимости:
    cd web
@@ -42,7 +46,7 @@ SECRET_KEY генерируется: python -c "import secrets; print(secrets.to
 6. Тесты:
    cd ..
    python tests\run_all.py
-   Ожидание: 10 файлов, 196 проверок, упало 0.
+   Ожидание: 12 файлов, 229 проверок, упало 0.
 
 7. Запуск:
    cd web
@@ -60,7 +64,7 @@ SECRET_KEY генерируется: python -c "import secrets; print(secrets.to
    mkdir -p /opt/legal_mind
    chown legal:legal /opt/legal_mind
 
-3. Заливка (с локальной машины):
+3. Заливка (первый раз — с локальной машины):
    scp -r core region modules web deploy root@201.24.49.121:/opt/legal_mind/
 
 4. Права:
@@ -89,28 +93,90 @@ SECRET_KEY генерируется: python -c "import secrets; print(secrets.to
 8. Проверка:
    curl http://127.0.0.1:5000/health
 
-## Деплой после правок
+## Автодеплой (после первого ручного развёртывания)
 
-.\deploy\deploy.ps1
+1. Git на сервере:
+   cd /opt/legal_mind
+   git init
+   git remote add origin git@github.com:lolilop1/legal-mind.git
+   git fetch origin main
+   git reset --hard origin/main
 
-Скрипт: тесты → бэкап → заливка → перезапуск → health → откат при провале.
+2. Deploy Key (read-only) в GitHub:
+   - Settings → Deploy keys → Add deploy key
+   - Вставить публичный ключ с сервера
+   - Allow write access — НЕ ставить
+
+3. SSH config на сервере:
+   cat > ~/.ssh/config <<EOF
+   Host github.com
+     HostName github.com
+     User git
+     IdentityFile ~/.ssh/github_deploy_key
+     IdentitiesOnly yes
+   EOF
+   chmod 600 ~/.ssh/config
+
+4. GitHub Secrets (Settings → Secrets → Actions):
+   - SSH_HOST=201.24.49.121
+   - SSH_USER=root
+   - SSH_PRIVATE_KEY=<приватный ключ>
+
+5. Проверка:
+   ssh -T git@github.com
+   Ожидание: Hi lolilop1/legal-mind! You've successfully authenticated.
+
+6. После этого — любой git push автоматически деплоит.
 
 ## Полезные команды
 
-Логи: journalctl -u legal-mind -n 100
-Перезапуск: systemctl restart legal-mind
-Статистика БД: см. deploy.md
+Логи приложения:
+journalctl -u legal-mind -n 100 --no-pager
+
+Статистика БД:
+sudo -u legal /opt/legal_mind/venv/bin/python -c "
+import sys
+sys.path.insert(0, '/opt/legal_mind')
+from core import case_db
+case_db.init_db()
+print(case_db.stats())
+"
+
+Перезапуск:
+systemctl restart legal-mind
 
 ## Возможные проблемы
 
-ModuleNotFoundError — запуск не из корня.
+ModuleNotFoundError: No module named 'core'
+— приложение запускается не из корня. Запускать из корня проекта.
 
-fpdf2 ошибка — pip install --upgrade fpdf2.
+fpdf2: not enough horizontal space
+— pip install --upgrade fpdf2
 
-Permission denied на CSS — chmod 755 web/static.
+Permission denied на CSS
+— chmod 755 /opt/legal_mind/web/static
 
-llm_configured: false — проверить cat /opt/legal_mind/web/.env.
+llm_configured: false
+— cat /opt/legal_mind/web/.env — проверить 4 ключа
+
+500 в карточке дела
+— journalctl -u legal-mind -n 50 — там traceback
+
+GitHub Actions: Permission denied (publickey)
+— в SSH_PRIVATE_KEY вставлен не тот ключ. Должен быть локальный
+  ~/.ssh/github_deploy_key (не серверный).
+
+## Обновление базы регионов
+
+cd /opt/legal_mind
+python scripts/rag_mass_v4.py        (полный прогон, ~380 ₽)
+python scripts/rag_hardcode_fixed.py (12 регионов ручной правки)
+python scripts/build_embeddings.py   (пересборка эмбеддингов, ~5 ₽)
 
 ## Что дальше
 
-README.md, docs/ARCHITECTURE.md, docs/MODULES.md, docs/DECISIONS.md.
+- README.md — обзор проекта
+- ROADMAP.md — план на этапы
+- docs/ARCHITECTURE.md — как устроено
+- docs/MODULES.md — что умеет
+- docs/DECISIONS.md — журнал решений

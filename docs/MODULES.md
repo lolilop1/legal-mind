@@ -2,54 +2,63 @@
 
 ## Модуль 2 — Жалоба в УК
 
-**Что делает:** жалоба в управляющую компанию на ненадлежащее содержание общего имущества.
+**Что делает:** жалоба в управляющую компанию на ненадлежащее
+содержание общего имущества.
 
 **Кому адресована:** управляющая компания.
 
 **Правовые нормы (универсальные, федеральные):**
 1. Статья 161 Жилищного кодекса РФ — ответственность УК
-2. Постановление Правительства РФ от 13.08.2006 № 491 — требования к содержанию
-3. Постановление Госстроя РФ от 27.09.2003 № 170 — конкретные нормативы
+2. Постановление Правительства РФ от 13.08.2006 № 491
+3. Постановление Госстроя РФ от 27.09.2003 № 170
 
 **Типовые случаи:**
 - Не убирают подъезд
 - Холодные батареи
 - Не работает лифт
-- Не чистят снег во дворе
+- Не чистят снег
 - Течёт крыша
 - Сломан домофон
 
-**Hard-check (модуль `modules/uk/hardchecks.py`):**
+**Hard-check (modules/uk/hardchecks.py):**
 - Emergency → STOP (газ, пожар, искрит проводка, трещина в несущей)
 - Слишком коротко (<10 символов) → STOP
 - Нет букв (только эмодзи/цифры) → STOP
 - Слишком общее описание → STOP
-- Жалоба на соседей → STOP (не тот модуль)
+- Жалоба на соседей → STOP
 - Нет адреса → STOP
 
-**Entity check:** проверяет сохранение существенных фактов — дети, инвалиды, посторонние, номера квартир.
+**Pre-check (modules/uk/pre_checks.py):**
+- Объект проблемы — критично
+- Дата начала — опционально
+
+**Entity check:** проверяет сохранение существенных фактов —
+дети, инвалиды, посторонние, номера квартир.
 
 **Файлы:**
-- `modules/uk/hardchecks.py`
-- `modules/uk/entity_check.py`
-- `modules/uk/pdf.py`
+- modules/uk/hardchecks.py
+- modules/uk/pre_checks.py
+- modules/uk/entity_check.py
+- modules/uk/pdf.py
 
-**Статус:** работает, 12/12 API-кейсов, 62/62 офлайн-тестов.
+**Статус:** работает. 12/12 API-кейсов, 62/62 офлайн-тестов.
 
 ---
 
 ## Модуль 3 — Жалоба на шум
 
-**Что делает:** заявление участковому уполномоченному полиции о нарушении тишины.
+**Что делает:** заявление участковому уполномоченному полиции
+о нарушении тишины.
 
 **Кому адресовано:** участковый уполномоченный полиции.
 
-**Правовые нормы:** **региональные** (85 субъектов РФ). База в `region/data/noise_laws.db`.
+**Правовые нормы:** региональные (85 субъектов РФ).
+База в region/data/noise_laws.db.
 
 **Как определяется регион:**
 1. Regex по адресу (26 паттернов) — быстро
-2. Embeddings (85 векторов) — fallback для нестандартных адресов
-3. Если регион не найден — нейтральная формулировка без ссылки на закон
+2. Embeddings (85 векторов) — fallback
+3. Если регион не найден — нейтральная формулировка
 
 **Типовые случаи:**
 - Громкая музыка по ночам
@@ -58,108 +67,131 @@
 - Лай собаки
 - Топот, вечеринки
 
-**Hard-check (модуль `modules/noise/hardchecks.py`):**
+**Hard-check (modules/noise/hardchecks.py):**
 - Emergency → STOP (угрозы жизни, нападение, нож)
 - Слишком коротко → STOP
 - Нет букв → STOP
 - Не про шум → STOP
-- Не ясно, кто шумит (нет соседа/квартиры/этажа) → STOP
+- Не ясно, кто шумит → STOP
 - Нет адреса → STOP
 
-**Файлы:**
-- `modules/noise/hardchecks.py`
-- `modules/noise/pdf.py`
-- `region/extractor.py` — определение региона
-- `region/regex.py` — паттерны
-- `region/embeddings.py` — семантический поиск
-- `region/db_client.py` — чтение базы законов
-- `region/data/noise_laws.db` — 85 законов
-- `region/data/embeddings.json` — 85 векторов
+**Pre-check (modules/noise/pre_checks.py):**
+- Вид шума — критично (музыка, ремонт, крики, лай)
+- Источник шума — критично (сосед сверху, из кв. N, за стеной)
+- Время суток — опционально
+- Регион — опционально
 
-**Статус:** работает, 12/12 API-кейсов, 19/19 офлайн-тестов, регионы 26/26.
+**Файлы:**
+- modules/noise/hardchecks.py
+- modules/noise/pre_checks.py
+- modules/noise/pdf.py
+- region/extractor.py
+- region/regex.py
+- region/embeddings.py
+- region/db_client.py
+- region/data/noise_laws.db
+- region/data/embeddings.json
+
+**Статус:** работает. 12/12 API-кейсов, 19/19 офлайн-тестов,
+регионы 26/26.
 
 ---
 
-## Модуль 1 — Потребитель (в разработке)
+## Модуль 1 — Потребитель (в планах)
 
 **Что будет делать:** претензия по защите прав потребителей.
 
-**Кому адресовано:** продавец / маркетплейс.
+**Кому адресована:** продавец / маркетплейс.
 
 **Правовые нормы:** ЗоЗПП (федеральный).
 
 **Подмодули (по приоритету от людей):**
 
-| Подмодуль | Статья | Что | Приоритет |
-|---|---|---|---|
-| A. Брак | ст. 18 | Товар сломался | 1 (начнём с этого) |
-| B. Возврат 14 дней | ст. 25 | Не подошло | 2 |
-| C. Маркетплейс | ст. 26.1 | Ozon, WB, Авито | 3 |
-| D. Услуга | ст. 29 | Ремонт, курсы | 4 (отложен) |
+Подмодуль              | Статья    | Что                  | Приоритет
+-----------------------|-----------|----------------------|----------
+A. Товар с браком      | ст. 18    | Товар сломался       | 1
+B. Возврат 14 дней     | ст. 25    | Не подошло           | 2
+C. Маркетплейс         | ст. 26.1  | Ozon, WB, Авито      | 3
+D. Услуга              | ст. 29    | Ремонт, курсы        | 4 (отложен)
 
-**Архитектура:** **один движок + 4 конфига.**
-- `modules/consumer/engine.py` — общая логика
-- `modules/consumer/prompts.py` — базовые промпты
-- `modules/consumer/pdf.py` — общий PDF
-- `modules/consumer/configs/defect.py` — A
-- `modules/consumer/configs/return14.py` — B
-- `modules/consumer/configs/marketplace.py` — C
-- `modules/consumer/configs/service.py` — D
+**Архитектура:** один движок + 4 конфига.
 
-**Сигнал от людей:** 95% обращений — про потребителя (A+B+C), 5% — про услуги (D).
+- modules/consumer/engine.py
+- modules/consumer/prompts.py
+- modules/consumer/pdf.py
+- modules/consumer/hardchecks.py
+- modules/consumer/pre_checks.py
+- modules/consumer/configs/defect.py
+- modules/consumer/configs/return14.py
+- modules/consumer/configs/marketplace.py
+- modules/consumer/configs/service.py
 
-**Статус:** в разработке с 2026-09-11.
+**Сигнал от людей:** 95% обращений — про потребителя.
+
+**Статус:** в планах.
 
 ---
 
 ## Планируемые модули
 
-| № | Модуль | Нормы | Сложность |
-|---|---|---|---|
-| 4 | Труд | ТК РФ | средняя |
-| 5 | Аренда | ГК РФ | средняя |
-| 6 | Авто | ОСАГО/КАСКО | высокая |
-| 7 | Семья | СК РФ | высокая |
-| 8 | Государство | КАС РФ | высокая |
+№  | Модуль         | Нормы        | Сложность
+---|----------------|--------------|----------
+4  | Труд           | ТК РФ        | средняя
+5  | Аренда         | ГК РФ        | средняя
+6  | Авто           | ОСАГО/КАСКО  | высокая
+7  | Семья          | СК РФ        | высокая
+8  | Государство    | КАС РФ       | высокая
 
-**Правило:** новый модуль — **только после обкатки предыдущего** на живых людях.
+Правило: новый модуль — только после обкатки предыдущего на живых людях.
 
 ---
 
 ## Общие компоненты
 
-### `core/`
+### core/
 
-- **`llm.py`** — клиент Alice AI Flash (Responses API). Функции: `call_alice_flash()`, `call_alice_pro()`.
-- **`name_declension.py`** — склонение ФИО в родительный падеж (pymorphy3).
-- **`phone_check.py`** — валидация телефона (длина, повторяющиеся цифры, последовательности).
+- llm.py — клиент Alice AI Flash
+- name_declension.py — склонение ФИО (pymorphy3)
+- phone_check.py — валидация телефона
+- case_db.py — доступ к БД CASE
+- case_id.py — генератор номера + UUID
+- labels.py — русские названия
+- address.py — нормализация адреса
+- pre_checks.py — модель PreCheckReport
+- trace.py — модель LegalTrace
 
-### `region/`
+### region/
 
-- **`extractor.py`** — `extract_region(адрес) → str | None`. Гибрид.
-- **`regex.py`** — `_COMPILED` — список паттернов на 85 регионов.
-- **`embeddings.py`** — `search_region(адрес) → str | None`. Семантический поиск.
-- **`db_client.py`** — `get_law_for_region(регион) → dict | None`. Приоритет версий: `v3-hardcoded` > `v4-pro-host-filtered` > `v1-minimal`.
+- extractor.py — extract_region(адрес) → str | None
+- regex.py — 26 паттернов на 85 регионов
+- embeddings.py — search_region(адрес) → str | None
+- db_client.py — get_law_for_region(регион) → dict | None
 
-### `web/`
+### web/
 
-- **`app.py`** — Flask, роуты `/`, `/submit`, `/health`. Промпты, обработка ошибок, логирование.
+- app.py — Flask, роуты /, /submit, /my, /case/, /health
+- schema.sql — схема БД CASE
 
-### `scripts/`
+### scripts/
 
-- **`build_embeddings.py`** — пересборка `region/data/embeddings.json` (~5 ₽).
-- **`rag_mass_v4.py`** — полная пересборка базы регионов (~380 ₽).
-- **`rag_hardcode_fixed.py`** — 12 регионов с ручной проверкой (0 ₽).
-- **`batch_pdf_from_results.py`** — генерация PDF из `results_module2.json`.
-- **`adversarial_tests.py`** — 29 атакующих кейсов против живого сервиса.
+- build_embeddings.py — пересборка эмбеддингов
+- rag_mass_v4.py — полная пересборка базы регионов
+- rag_hardcode_fixed.py — 12 регионов ручной проверки
+- batch_pdf_from_results.py — массовая генерация PDF
+- adversarial_tests.py — 29 атакующих кейсов
 
-### `tests/`
+### tests/
 
-Запуск: `python tests/run_all.py`
-- `test_uk_hardchecks.py` — 62 кейса
-- `test_noise_hardchecks.py` — 19 кейсов
-- `test_entity_check.py` — 10 кейсов
-- `test_region_extractor.py` — 26 кейсов
-- `test_name_declension.py` — 11 кейсов
-- `test_phone_check.py` — 18 кейсов
-- `test_pdf_generation.py` — 3 PDF
+12 файлов, 229 проверок:
+- test_uk_hardchecks.py — 62
+- test_noise_hardchecks.py — 19
+- test_entity_check.py — 10
+- test_region_extractor.py — 26
+- test_name_declension.py — 11
+- test_phone_check.py — 18
+- test_pdf_generation.py — 3
+- test_case_id.py — 17
+- test_case_db.py — 23
+- test_address.py — 7
+- test_pre_checks.py — 17
+- test_trace.py — 16
