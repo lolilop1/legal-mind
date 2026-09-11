@@ -23,6 +23,20 @@
     <p class="case-date">Создано: {{ case.created_at }}</p>
   </div>
 
+  {% if case.confidence and (case.confidence.known or case.confidence.missing_optional) %}
+  <div class="case-section case-precheck">
+    <h2>Что знаем</h2>
+    <ul>
+      {% for item in case.confidence.known %}
+      <li><span class="precheck-mark">✓</span> {{ item.label }}: <strong>{{ item.value }}</strong></li>
+      {% endfor %}
+      {% for item in case.confidence.missing_optional %}
+      <li><span class="precheck-mark">•</span> {{ item.label }} <span class="precheck-hint">— {{ item.hint }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
   <div class="case-section">
     <h2>Что известно</h2>
     <table class="case-table">
@@ -88,8 +102,22 @@
     </div>
   </div>
   {% endif %}
+
+  <div class="case-section">
+    <h2>Версия документа</h2>
+    <table class="case-table">
+      {% if case.engine_version %}
+      <tr><td>Движок</td><td><code>{{ case.engine_version }}</code></td></tr>
+      {% endif %}
+      {% if case.rules_version %}
+      <tr><td>Правила</td><td><code>{{ case.rules_version }}</code></td></tr>
+      {% endif %}
+      {% if case.template_version %}
+      <tr><td>Шаблон</td><td><code>{{ case.template_version }}</code></td></tr>
+      {% endif %}
+      <tr><td>Создано</td><td>{{ case.created_at }}</td></tr>
+    </table>
   </div>
-  {% endif %}
 
   <div class="case-section">
     <h2>Документы</h2>
@@ -107,24 +135,6 @@
     <p class="case-empty">Документы ещё не сгенерированы.</p>
     {% endif %}
   </div>
-
-  {% if case.engine_version or case.rules_version or case.template_version %}
-  <div class="case-section">
-    <h2>Версия документа</h2>
-    <table class="case-table">
-      {% if case.engine_version %}
-      <tr><td>Движок</td><td><code>{{ case.engine_version }}</code></td></tr>
-      {% endif %}
-      {% if case.rules_version %}
-      <tr><td>Правила</td><td><code>{{ case.rules_version }}</code></td></tr>
-      {% endif %}
-      {% if case.template_version %}
-      <tr><td>Шаблон</td><td><code>{{ case.template_version }}</code></td></tr>
-      {% endif %}
-      <tr><td>Создано</td><td>{{ case.created_at }}</td></tr>
-    </table>
-  </div>
-  {% endif %}
 
   <div class="case-section">
     <h2>Исходное описание</h2>
