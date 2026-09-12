@@ -26,7 +26,7 @@ Adversarial (29 кейсов)                | OK (29/29)
 ## Что сделано
 
 ### Модульность
-Переехали с плоской на модульную. 15 файлов тестов, 304 проверок. systemd + nginx обновлены.
+Переехали с плоской на модульную. 15 файлов тестов, 305 проверок. systemd + nginx обновлены.
 
 ### CASE (этап 3)
 core/case_db.py, core/case_id.py, web/schema.sql. Экран /my, карточка /case. core/labels.py.
@@ -52,14 +52,6 @@ IDOR в /case/<ref>/pdf/<doc_id> — доступ к документу пров
 SECRET_KEY обязателен (без тихого insecure-дефолта); openai>=1.66
 (нужен Responses API, 1.50 его не гарантирует).
 
-### Security-патч (13.09.2026)
-IDOR в /case/<ref>/pdf/<doc_id> — доступ к документу проверялся только
-по case_ref, а сам doc_id (глобальный AUTOINCREMENT) не проверялся на
-принадлежность делу. Теперь get_document_content(doc_id, case_number)
-фильтрует по обеим. Заодно: create_case — атомарная генерация номера
-(BEGIN IMMEDIATE + retry, раньше была гонка при параллельных запросах);
-SECRET_KEY обязателен (без тихого insecure-дефолта); openai>=1.66
-(нужен Responses API, 1.50 его не гарантирует).
 
 ### Модуль 1 (Потребитель)
 4 сценария: defect, return14, marketplace, service. Авто-детект по тексту.

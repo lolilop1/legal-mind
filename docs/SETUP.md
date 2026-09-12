@@ -46,7 +46,7 @@ python -c "import secrets; print(secrets.token_hex(32))"
 6. Тесты:
    cd ..
    python tests\run_all.py
-   Ожидание: 15 файлов, 304 проверки, упало 0.
+   Ожидание: 15 файлов, 305 проверок, упало 0.
 
 7. Запуск:
    cd web

@@ -61,7 +61,7 @@ legal_mind/
 │   │   ├── hardchecks.py
 │   │   ├── pre_checks.py
 │   │   └── pdf.py
-│   └── consumer/           — потребитель (в планах)
+│   └── consumer/           — потребитель (защита прав)
 │
 ├── web/                     — Flask-приложение
 │   ├── app.py
@@ -72,7 +72,7 @@ legal_mind/
 │   └── .env
 │
 ├── scripts/                 — разовые утилиты
-├── tests/                   — 15 файлов
+├── tests/                   — 15 файлов, 305 проверок
 ├── docs/                    — документация
 └── deploy/                  — инфраструктура
 

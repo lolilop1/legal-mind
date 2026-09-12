@@ -97,7 +97,7 @@
 
 ---
 
-## Модуль 1 — Потребитель (в планах)
+## Модуль 1 — Потребитель
 
 **Что будет делать:** претензия по защите прав потребителей.
 
@@ -202,13 +202,13 @@ D. Услуга              | ст. 29    | Ремонт, курсы        | 4
 
 ### tests/
 
-15 файлов, 304 проверки:
+15 файлов, 305 проверок:
 - test_uk_hardchecks.py — 62
 - test_noise_hardchecks.py — 19
 - test_entity_check.py — 10
 - test_region_extractor.py — 26
 - test_name_declension.py — 11
-- test_phone_check.py — 18
+- test_phone_check.py — 30
 - test_pdf_generation.py — 3
 - test_case_id.py — 17
 - test_case_db.py — 23

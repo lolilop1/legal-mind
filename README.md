@@ -57,7 +57,7 @@ Python 3.14, Flask, gunicorn, nginx, systemd, fpdf2, pymorphy3, Alice AI Flash, 
 - modules/ — uk, noise, consumer
 - web/ — Flask
 - scripts/ — разовые утилиты
-- tests/ — 15 файлов, 304 проверки
+- tests/ — 15 файлов, 305 проверок
 - docs/ — документация
 - deploy/ — инфраструктура
 
@@ -75,7 +75,7 @@ ssh root@201.24.49.121, systemctl status legal-mind.
 
 ## Roadmap
 
-См. ROADMAP.md. Ближайшее: Модуль 1 (Потребитель), домен legalmind.su.
+См. ROADMAP.md. Ближайшее: домен legalmind.su + HTTPS.
 
 ## Ссылки
 
@@ -90,7 +90,7 @@ STATUS.md, ROADMAP.md, docs/.
 - **Деплой** через Deploy Key с read-only доступом
 - **CI/CD** — секреты через GitHub Secrets
 - **База** `cases.db` и `logs/` не коммитятся
-- **Доступ к документам дела** — по паре (case_number, doc_id); IDOR (доступ по одному doc_id без проверки дела) закрыт 13.09.2026
+- **Доступ к документу** проверяется по паре (doc_id, case_number) — нельзя скачать чужой PDF, перебрав doc_id (IDOR закрыт 13.09.2026)
 - **SECRET_KEY** обязателен для старта — сервис падает при отсутствии вместо небезопасного дефолта
 
 Быстрая проверка локально:
