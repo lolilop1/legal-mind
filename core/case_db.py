@@ -35,9 +35,11 @@ def _get_conn() -> sqlite3.Connection:
     global _conn
     if _conn is not None:
         return _conn
-    _conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    # isolation_level=None -> autocommit, транзакциями управляем сами (см. create_case)
+    _conn = sqlite3.connect(DB_PATH, check_same_thread=False, isolation_level=None)
     _conn.row_factory = sqlite3.Row
     _conn.execute("PRAGMA foreign_keys = ON")
+    _conn.execute("PRAGMA busy_timeout = 5000")
     return _conn
 
 
@@ -78,13 +80,12 @@ def create_case(
     rules_version: str = "",
     template_version: str = "",
 ) -> dict:
-    """Создаёт новый CASE. Возвращает {case_number, case_uuid, created_at}."""
-    conn = _get_conn()
-    seq = _next_seq_for_today(conn)
-    case_number = format_case_number(date.today(), seq)
-    case_uuid = generate_case_uuid()
-    now = datetime.now().isoformat(timespec="seconds")
+    """Создаёт новый CASE. Возвращает {case_number, case_uuid, created_at}.
 
+    Генерация номера + вставка — атомарны (BEGIN IMMEDIATE), с ретраем
+    при коллизии case_number между параллельными запросами.
+    """
+    conn = _get_conn()
     dna = dna or {}
 
     def j(v):
@@ -92,43 +93,63 @@ def create_case(
             return None
         return json.dumps(v, ensure_ascii=False)
 
-    conn.execute(
-        """
-        INSERT INTO cases (
-            case_number, case_uuid, created_at, updated_at,
-            problem_type, subject, object, event, dates, amount,
-            counterparty, jurisdiction, demand,
-            evidence, confidence, trace,
-            engine_version, rules_version, template_version,
-            source_text, user_data
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            case_number, case_uuid, now, now,
-            problem_type,
-            dna.get("subject"),
-            dna.get("object"),
-            dna.get("event"),
-            j(dna.get("dates")),
-            dna.get("amount"),
-            dna.get("counterparty"),
-            dna.get("jurisdiction"),
-            dna.get("demand"),
-            j(dna.get("evidence")),
-            j(dna.get("confidence")),
-            j(dna.get("trace")),
-            engine_version or None,
-            rules_version or None,
-            template_version or None,
-            source_text,
-            json.dumps(user_data, ensure_ascii=False),
-        ),
+    last_error: Exception | None = None
+
+    for _attempt in range(5):
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            seq = _next_seq_for_today(conn)
+            case_number = format_case_number(date.today(), seq)
+            case_uuid = generate_case_uuid()
+            now = datetime.now().isoformat(timespec="seconds")
+
+            conn.execute(
+                """
+                INSERT INTO cases (
+                    case_number, case_uuid, created_at, updated_at,
+                    problem_type, subject, object, event, dates, amount,
+                    counterparty, jurisdiction, demand,
+                    evidence, confidence, trace,
+                    engine_version, rules_version, template_version,
+                    source_text, user_data
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    case_number, case_uuid, now, now,
+                    problem_type,
+                    dna.get("subject"),
+                    dna.get("object"),
+                    dna.get("event"),
+                    j(dna.get("dates")),
+                    dna.get("amount"),
+                    dna.get("counterparty"),
+                    dna.get("jurisdiction"),
+                    dna.get("demand"),
+                    j(dna.get("evidence")),
+                    j(dna.get("confidence")),
+                    j(dna.get("trace")),
+                    engine_version or None,
+                    rules_version or None,
+                    template_version or None,
+                    source_text,
+                    json.dumps(user_data, ensure_ascii=False),
+                ),
+            )
+            conn.commit()
+        except sqlite3.IntegrityError as e:
+            conn.rollback()
+            last_error = e
+            continue
+        except Exception:
+            conn.rollback()
+            raise
+
+        add_event(case_number, "created", {"problem_type": problem_type})
+        return {"case_number": case_number, "case_uuid": case_uuid, "created_at": now}
+
+    raise RuntimeError(
+        f"Не удалось создать CASE — коллизия case_number 5 раз подряд: {last_error}"
     )
-    conn.commit()
-
-    add_event(case_number, "created", {"problem_type": problem_type})
-
-    return {"case_number": case_number, "case_uuid": case_uuid, "created_at": now}
 
 
 def get_case(case_number: str, case_uuid: str) -> dict | None:
@@ -232,9 +253,13 @@ def get_documents(case_number: str) -> list[dict]:
     return [dict(r) for r in cur.fetchall()]
 
 
-def get_document_content(doc_id: int) -> bytes | None:
+def get_document_content(doc_id: int, case_number: str) -> bytes | None:
+    """Возвращает содержимое документа только если он принадлежит указанному делу."""
     conn = _get_conn()
-    cur = conn.execute("SELECT content FROM case_documents WHERE id = ?", (doc_id,))
+    cur = conn.execute(
+        "SELECT content FROM case_documents WHERE id = ? AND case_number = ?",
+        (doc_id, case_number),
+    )
     row = cur.fetchone()
     return row["content"] if row else None
 

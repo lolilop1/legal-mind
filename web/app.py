@@ -97,7 +97,12 @@ def log_event(module: str, problem_len: int, stop_kind: str,
 
 
 app = Flask(__name__)
-app.secret_key = SECRET_KEY or "dev-insecure-key-change-me"
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY не задан в .env. Сгенерируй: "
+        "python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
+app.secret_key = SECRET_KEY
 
 # ─── Jinja-фильтр: код → русское название ───
 app.jinja_env.filters["problem_label"] = problem_type_label
@@ -840,7 +845,7 @@ def download_case_pdf(case_ref: str, doc_id: int):
     if case is None:
         abort(404)
 
-    content = case_db.get_document_content(doc_id)
+    content = case_db.get_document_content(doc_id, case_number)
     if content is None:
         abort(404)
 

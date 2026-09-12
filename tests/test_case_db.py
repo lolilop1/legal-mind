@@ -78,8 +78,12 @@ def main():
         check(len(docs) == 1, "add_document: список")
         check(docs[0]["doc_type"] == "claim", "add_document: тип")
 
-        content = case_db.get_document_content(doc_id)
+        content = case_db.get_document_content(doc_id, num)
         check(content == b"PDF_CONTENT", "add_document: содержимое")
+
+        # IDOR-регресс: чужой case_number не должен давать доступ к этому документу
+        wrong = case_db.get_document_content(doc_id, "LM-00000000-0000")
+        check(wrong is None, "get_document_content: чужой case_number -> None")
 
         events = case_db.get_events(num)
         check(len(events) >= 3, f"events: >= 3 (получено {len(events)})")
