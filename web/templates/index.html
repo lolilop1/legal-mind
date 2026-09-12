@@ -96,10 +96,15 @@
       <!-- Consumer -->
       <div id="consumer-only-fields" {% if not (form_data and form_data.get('problem_type') == 'consumer') %}style="display: none;"{% endif %}>
         <label>Продавец / исполнитель</label>
-        <input type="text" name="продавец" placeholder="ООО «М.Видео», Wildberries, ИП Иванов" value="{{ form_data.get('продавец', '') if form_data else '' }}">
+        <input type="text" name="продавец" placeholder="ООО «М.Видео», Wildberries, ИП Иванов, самозанятый Петров" value="{{ form_data.get('продавец', '') if form_data else '' }}">
 
         <label>Адрес продавца</label>
-        <input type="text" name="адрес_продавца" placeholder="125167, г. Москва, Ленинградский пр-т, д. 76А" value="{{ form_data.get('адрес_продавца', '') if form_data else '' }}">
+        <input type="text" name="адрес_продавца" placeholder="Для ООО/ИП обязателен. Для физлица можно оставить пустым" value="{{ form_data.get('адрес_продавца', '') if form_data else '' }}">
+
+        <div id="seller-link-field" style="display: none;">
+          <label>Ссылка на профиль/объявление <span style="color:#888; font-weight:400;">(если знаете)</span></label>
+          <input type="text" name="ссылка_продавца" placeholder="https://www.avito.ru/user/... или @nickname" value="{{ form_data.get('ссылка_продавца', '') if form_data else '' }}">
+        </div>
 
         <label>Дата покупки</label>
         <input type="text" name="дата_покупки" id="date-purchase" placeholder="10.09.2026" value="{{ form_data.get('дата_покупки', '') if form_data else '' }}">
@@ -171,17 +176,178 @@ window.lmOnTypeChange = function(val) {
     });
   }
 
+  // ─── Хелперы: показать/убрать ошибку поля ───
+  function lmShowFieldError(field, message) {
+    field.style.borderColor = '#d32f2f';
+    var next = field.nextElementSibling;
+    if (next && next.classList.contains('lm-field-error')) {
+      next.textContent = message;
+      return;
+    }
+    var err = document.createElement('div');
+    err.className = 'lm-field-error';
+    err.textContent = message;
+    field.parentNode.insertBefore(err, field.nextSibling);
+  }
+
+  function lmClearFieldError(field) {
+    field.style.borderColor = '';
+    var next = field.nextElementSibling;
+    if (next && next.classList.contains('lm-field-error')) {
+      next.remove();
+    }
+  }
+
+  function lmClearAllErrors(step) {
+    step.querySelectorAll('.lm-field-error').forEach(function(e) { e.remove(); });
+    step.querySelectorAll('input, textarea, select').forEach(function(f) {
+      f.style.borderColor = '';
+    });
+  }
+
+  // ─── Валидация по шагам ───
+  function lmValidateStep(n) {
+    var step = form.querySelector('.wizard-step[data-step="' + n + '"]');
+    if (!step) return true;
+    lmClearAllErrors(step);
+
+    var ok = true;
+    var firstBad = null;
+
+    function fail(field, msg) {
+      ok = false;
+      lmShowFieldError(field, msg);
+      if (!firstBad) firstBad = field;
+    }
+
+    if (n === 1) {
+      var typeSel = step.querySelector('select[name="problem_type"]');
+      var problem = step.querySelector('textarea[name="проблема"]');
+      if (!problem.value.trim()) fail(problem, 'Опишите проблему — без этого мы не поймём, что нужно составить');
+      else if (problem.value.trim().length < 10) fail(problem, 'Слишком короткое описание — добавьте деталей');
+    }
+
+    if (n === 2) {
+      var type = form.querySelector('select[name="problem_type"]').value;
+      var addr = step.querySelector('input[name="адрес"]');
+      if (!addr.value.trim()) fail(addr, 'Укажите ваш адрес — он нужен в шапке документа');
+
+      if (type === 'consumer') {
+        var seller = step.querySelector('input[name="продавец"]');
+        var sellerAddr = step.querySelector('input[name="адрес_продавца"]');
+        var sellerLink = step.querySelector('input[name="ссылка_продавца"]');
+
+        var sellerVal = seller.value.trim();
+        var addrVal = sellerAddr ? sellerAddr.value.trim() : '';
+        var linkVal = sellerLink ? sellerLink.value.trim() : '';
+
+        if (!sellerVal) {
+          fail(seller, 'Укажите продавца или исполнителя');
+        } else if (lmIsLegalEntity(sellerVal)) {
+          if (!addrVal) {
+            fail(sellerAddr, 'Для ООО/ИП адрес обязателен — он есть в ЕГРЮЛ/ЕГРИП, чеке или на сайте');
+          }
+        } else {
+          // Физлицо: нужен либо адрес, либо ссылка
+          if (!addrVal && !linkVal) {
+            fail(sellerLink || sellerAddr,
+                 'Для продавца-физлица нужен адрес ИЛИ ссылка на профиль — иначе претензию некуда отправить');
+          }
+        }
+      }
+    }
+
+    if (n === 3) {
+      var fio = step.querySelector('input[name="фио"]');
+      var phone = step.querySelector('input[name="телефон"]');
+
+      if (!fio.value.trim()) {
+        fail(fio, 'Укажите ФИО — оно пойдёт в шапку документа');
+      } else if (fio.value.trim().split(/\s+/).length < 2) {
+        fail(fio, 'Укажите хотя бы фамилию и имя');
+      }
+
+      if (!phone.value.trim()) {
+        fail(phone, 'Укажите контактный телефон — без него документ не примут');
+      } else {
+        var digits = phone.value.replace(/\D/g, '');
+
+        if (digits.length < 10) {
+          fail(phone, 'Телефон слишком короткий — нужно минимум 10 цифр');
+        } else if (digits.length > 15) {
+          fail(phone, 'Телефон слишком длинный — не больше 15 цифр');
+        } else if (/^(\d)\1+$/.test(digits)) {
+          fail(phone, 'Все цифры одинаковые — проверьте номер');
+        } else if ([12, 13, 14, 15].indexOf(digits.length) >= 0 &&
+                   (digits[0] === '7' || digits[0] === '8')) {
+          fail(phone, 'Для российского номера нужно 10 цифр без кода страны или 11 с кодом (+7 или 8)');
+        } else {
+          // Всё ок — нормализуем при потере фокуса
+          phone.dataset.raw = phone.value;
+          phone.dataset.digits = digits;
+        }
+      }
+    }
+
+    if (!ok && firstBad) {
+      firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstBad.focus();
+    }
+    return ok;
+  }
+
+  // Перехват submit — валидируем все шаги перед отправкой
+  form.addEventListener('submit', function(e) {
+    // Пробегаем по всем шагам 1..3
+    for (var step = 1; step <= 3; step++) {
+      if (!lmValidateStep(step)) {
+        e.preventDefault();
+        // Переключаемся на проблемный шаг и показываем
+        showStep(step);
+        return false;
+      }
+    }
+    // Всё ок — форма отправится
+  });
+
   // ВСЕГДА привязываем обработчики ПЕРВЫМ ДЕЛОМ
   form.querySelectorAll('.wizard-next').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      var step = form.querySelector('.wizard-step[data-step="' + current + '"]');
-      var valid = true;
-      step.querySelectorAll('input[required], textarea[required], select[required]').forEach(function(f) {
-        if (!f.value.trim()) { valid = false; f.style.borderColor = '#d32f2f'; }
-        else { f.style.borderColor = ''; }
-      });
-      if (!valid) return;
+      if (!lmValidateStep(current)) return;
       showStep(Math.min(current + 1, 3));
+    });
+  });
+
+  // Нормализация телефона при потере фокуса
+  var phoneInput = form.querySelector('input[name="телефон"]');
+  if (phoneInput) {
+    phoneInput.addEventListener('blur', function() {
+      var digits = phoneInput.value.replace(/\D/g, '');
+      if (!digits) return;
+
+      // РФ-номер
+      if (digits.length === 10) {
+        phoneInput.value = '+7 (' + digits.slice(0,3) + ') ' +
+                           digits.slice(3,6) + '-' +
+                           digits.slice(6,8) + '-' + digits.slice(8,10);
+      } else if (digits.length === 11 && (digits[0] === '7' || digits[0] === '8')) {
+        var body = digits.slice(1);
+        phoneInput.value = '+7 (' + body.slice(0,3) + ') ' +
+                           body.slice(3,6) + '-' +
+                           body.slice(6,8) + '-' + body.slice(8,10);
+      } else if (digits.length > 0) {
+        // Иностранный — +цифры
+        phoneInput.value = '+' + digits;
+      }
+    });
+  }
+
+  // При вводе — убираем ошибку поля
+  form.querySelectorAll('input, textarea, select').forEach(function(f) {
+    f.addEventListener('input', function() {
+      if (f.style.borderColor === 'rgb(211, 47, 47)' || f.style.borderColor === '#d32f2f') {
+        lmClearFieldError(f);
+      }
     });
   });
 
@@ -217,24 +383,89 @@ window.lmOnTypeChange = function(val) {
   } else {
     showStep(1);
   }
-})();
-</script>
 
-<script>
-(function() {
-  var el = document.getElementById('date-purchase');
-  if (!el || typeof flatpickr === 'undefined') return;
-  var today = new Date();
-  var maxDate = today.toISOString().slice(0, 10);
-  flatpickr(el, {
-    dateFormat: "d.m.Y",
-    locale: "ru",
-    maxDate: maxDate,
-    minDate: "2000-01-01",
-    defaultDate: null,
-    disableMobile: false,
-    allowInput: true
-  });
+  // ─── Маппинг серверных ошибок в поля ───
+  function lmMapServerErrors() {
+    var block = document.querySelector('.form-errors');
+    if (!block) return;
+
+    var errors = block.querySelectorAll('li');
+    var mapping = [
+      { kw: 'описание', field: 'проблема' },
+      { kw: 'адрес продавца', field: 'адрес_продавца' },
+      { kw: 'продавец', field: 'продавец' },
+      { kw: 'адрес', field: 'адрес' },
+      { kw: 'фио', field: 'фио' },
+      { kw: 'телефон', field: 'телефон' }
+    ];
+
+    errors.forEach(function(li) {
+      var text = (li.textContent || '').toLowerCase();
+      var matchedField = null;
+      for (var i = 0; i < mapping.length; i++) {
+        if (text.indexOf(mapping[i].kw) >= 0) {
+          matchedField = mapping[i].field;
+          break;
+        }
+      }
+      if (!matchedField) return;
+
+      var f = form.querySelector('[name="' + matchedField + '"]');
+      if (!f) return;
+
+      var next = f.nextElementSibling;
+      if (next && next.classList.contains('lm-field-error')) return;
+
+      lmShowFieldError(f, li.textContent.trim());
+    });
+
+    // Скрываем верхнюю плашку — ошибки теперь под полями
+    block.style.display = 'none';
+  }
+
+  // Вызываем после инициализации шага
+  lmMapServerErrors();
+
+  // ─── Показ/скрытие полей продавца в зависимости от типа ───
+  var sellerInput = form.querySelector('input[name="продавец"]');
+  var sellerLinkField = document.getElementById('seller-link-field');
+  var sellerAddressInput = form.querySelector('input[name="адрес_продавца"]');
+
+  function lmIsLegalEntity(s) {
+    if (!s) return true;
+    var upper = s.toUpperCase();
+    var prefixes = ['ООО', 'АО', 'ПАО', 'ЗАО', 'ОАО', 'НКО', 'МУП', 'ГУП', 'ТСЖ', 'ТД', 'ТЦ'];
+    for (var i = 0; i < prefixes.length; i++) {
+      if (upper.indexOf(prefixes[i] + ' ') === 0 || upper.indexOf(prefixes[i] + '.') === 0) {
+        return true;
+      }
+    }
+    if (upper.indexOf('ИП ') === 0 || upper.indexOf('ИП.') === 0) return true;
+    if (s.toLowerCase().indexOf('самозанят') >= 0) return true;
+    return false;
+  }
+
+  function lmUpdateSellerFields() {
+    if (!sellerInput || !sellerLinkField || !sellerAddressInput) return;
+    var val = (sellerInput.value || '').trim();
+    var isLegal = lmIsLegalEntity(val);
+
+    // Показ ссылки — только для физлиц (ИП / ООО скрываем)
+    sellerLinkField.style.display = isLegal ? 'none' : 'block';
+
+    // Placeholder адреса продавца
+    if (isLegal) {
+      sellerAddressInput.placeholder = 'Для ООО/ИП обязателен — есть в ЕГРЮЛ/ЕГРИП, чеке или на сайте';
+    } else {
+      sellerAddressInput.placeholder = 'Можно оставить пустым — если знаете, укажите';
+    }
+  }
+
+  if (sellerInput) {
+    sellerInput.addEventListener('input', lmUpdateSellerFields);
+    sellerInput.addEventListener('change', lmUpdateSellerFields);
+    lmUpdateSellerFields();
+  }
 })();
 </script>
 

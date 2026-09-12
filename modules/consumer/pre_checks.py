@@ -127,6 +127,26 @@ def _has_purchase_marker(text: str) -> bool:
     return bool(_PURCHASE_MARKERS.search(text))
 
 
+_LEGAL_PREFIXES_PRE = ("ООО", "АО", "ПАО", "ЗАО", "ОАО", "НКО",
+                        "МУП", "ГУП", "ТСЖ", "ТД", "ТЦ")
+
+
+def _is_legal_entity_pre(seller: str) -> bool:
+    """True если продавец похож на организацию, ИП или самозанятого."""
+    s = (seller or "").strip()
+    if not s:
+        return True
+    upper = s.upper()
+    for prefix in _LEGAL_PREFIXES_PRE:
+        if upper.startswith(prefix + " ") or upper.startswith(prefix + "."):
+            return True
+    if upper.startswith("ИП ") or upper.startswith("ИП."):
+        return True
+    if "самозанят" in s.lower():
+        return True
+    return False
+
+
 def run_consumer_pre_checks(user_data: dict, extras: dict | None = None) -> PreCheckReport:
     report = PreCheckReport()
     problem = (user_data.get("проблема") or "").strip()
@@ -146,13 +166,27 @@ def run_consumer_pre_checks(user_data: dict, extras: dict | None = None) -> PreC
         )
 
     seller_address = (user_data.get("адрес_продавца") or "").strip()
+    seller_link = (user_data.get("ссылка_продавца") or "").strip()
+    _is_legal = _is_legal_entity_pre(seller)
+
     if seller_address:
         add_known(report, "Адрес продавца", seller_address)
-    else:
+    elif seller_link:
+        add_known(report, "Ссылка на профиль", seller_link)
+    elif _is_legal:
         add_missing_critical(
             report,
             "Адрес продавца",
-            "Не указан адрес продавца — без него претензию некуда отправить.",
+            "Для организации/ИП адрес обязателен — он есть в ЕГРЮЛ/ЕГРИП, "
+            "в чеке или на сайте.",
+        )
+    else:
+        # Физлицо без адреса и без ссылки — критично
+        add_missing_critical(
+            report,
+            "Адрес или ссылка на продавца",
+            "Для продавца-физлица нужен хотя бы один идентификатор: "
+            "адрес или ссылка на профиль (Авито, Telegram, ВК).",
         )
 
     # Что куплено

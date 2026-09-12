@@ -15,9 +15,12 @@
 from __future__ import annotations
 
 import os
+import re
 from datetime import date
 
 from fpdf import FPDF
+
+from core.name_declension import decline_fio_dative, detect_gender_by_name, _detect_gender
 
 
 _FONT_CANDIDATES = [
@@ -61,6 +64,121 @@ def _mc(pdf: FPDF, height: float, text: str, align: str = "L") -> None:
     pdf.set_x(pdf.l_margin)
 
 
+_JURIDICAL_PREFIXES = ("ООО", "АО", "ПАО", "ЗАО", "ОАО", "НКО",
+                       "МУП", "ГУП", "ТСЖ", "ТД", "ТЦ")
+
+
+def _decline_word(word: str, kind: str, gender: str | None = None) -> str:
+    """Склоняет одно слово в дательный. Fallback — как есть."""
+    from core.name_declension import _inflect_dative, _PYMORPHY_AVAILABLE
+    if not _PYMORPHY_AVAILABLE:
+        return word
+    return _inflect_dative(word, kind=kind, gender=gender)
+
+
+def _get_name_role(word: str) -> str | None:
+    """Возвращает роль слова: 'Surn' / 'Name' / 'Patr' / None.
+
+    Проверяет ТОЛЬКО именительный падеж единственного числа (sing,nomn).
+    Так отличаем "Магазин" (обычное сущ.) от "Мария" (имя).
+    """
+    from core.name_declension import _MORPH, _PYMORPHY_AVAILABLE
+    if not _PYMORPHY_AVAILABLE or not word:
+        return None
+
+    try:
+        variants = _MORPH.parse(word)
+        for v in variants:
+            tag = v.tag
+            if "sing" not in tag or "nomn" not in tag:
+                continue
+            if "Surn" in tag:
+                return "Surn"
+            if "Name" in tag:
+                return "Name"
+            if "Patr" in tag:
+                return "Patr"
+    except Exception:
+        pass
+    return None
+
+
+def _format_addressee(seller: str) -> str:
+    """Возвращает «кому адресуем» для шапки претензии."""
+    s = (seller or "").strip()
+    if not s:
+        return "Директору"
+
+    upper = s.upper()
+
+    for prefix in _JURIDICAL_PREFIXES:
+        if upper.startswith(prefix + " ") or upper.startswith(prefix + "."):
+            return f"Директору {s}"
+
+    if upper.startswith("ИП ") or upper.startswith("ИП."):
+        return s
+
+    if "самозанят" in s.lower():
+        return s
+
+    parts = s.split()
+
+    # ─── 3 слова: Ф И О ───
+    if len(parts) == 3:
+        roles = [_get_name_role(p) for p in parts]
+        if roles == ["Surn", "Name", "Patr"]:
+            gender = detect_gender_by_name(parts[1]) or _detect_gender(parts[2])
+            declined = decline_fio_dative(s)
+            prefix = "Гражданке" if gender == "femn" else "Гражданину"
+            return f"{prefix} {declined}"
+
+    # ─── 2 слова: Ф И или И Ф ───
+    if len(parts) == 2:
+        role_a = _get_name_role(parts[0])
+        role_b = _get_name_role(parts[1])
+
+        if role_a == "Surn" and role_b == "Name":
+            surname, name = parts[0], parts[1]
+        elif role_a == "Name" and role_b == "Surn":
+            name, surname = parts[0], parts[1]
+        else:
+            return f"Продавцу {s}"
+
+        gender = detect_gender_by_name(name)
+        if not gender:
+            return f"Продавцу {s}"
+
+        declined_surname = _decline_word(surname, "Surn", gender)
+        declined_name = _decline_word(name, "Name", gender)
+        prefix = "Гражданке" if gender == "femn" else "Гражданину"
+        return f"{prefix} {declined_surname} {declined_name}"
+
+    # ─── 1 слово: русское имя ───
+    if len(parts) == 1:
+        role = _get_name_role(s)
+        if role != "Name":
+            return f"Продавцу {s}"
+        gender = detect_gender_by_name(s)
+        if not gender:
+            return f"Продавцу {s}"
+        declined = _decline_word(s, "Name", gender)
+        prefix = "Гражданке" if gender == "femn" else "Гражданину"
+        return f"{prefix} {declined}"
+
+    # Всё остальное — ник, ссылка, много слов, мусор
+    return f"Продавцу {s}"
+
+
+
+
+def _decline_word(word: str, kind: str, gender: str | None = None) -> str:
+    """Склоняет одно слово в дательный. Fallback — как есть."""
+    from core.name_declension import _inflect_dative, _PYMORPHY_AVAILABLE
+    if not _PYMORPHY_AVAILABLE:
+        return word
+    return _inflect_dative(word, kind=kind, gender=gender)
+
+
 def generate_pdf(output_path: str, requisites: dict, normalized: dict,
                  config: dict | None = None) -> str:
     """Рендерит PDF-претензию по ЗоЗПП.
@@ -82,7 +200,8 @@ def generate_pdf(output_path: str, requisites: dict, normalized: dict,
     pdf.add_font(family, style="B", fname=bold_path)
 
     seller = requisites.get("продавец") or "Продавец (наименование не указано)"
-    seller_address = requisites.get("адрес_продавца") or "[адрес уточняется]"
+    seller_address = requisites.get("адрес_продавца") or "адрес не указан"
+    seller_link = (requisites.get("ссылка_продавца") or "").strip()
 
     # Формы по полу (определяется в app.py через detect_gender)
     _pol = (requisites.get("пол") or "masc").lower()
@@ -90,9 +209,11 @@ def generate_pdf(output_path: str, requisites: dict, normalized: dict,
     F_VYN = "вынуждена" if _pol == "femn" else "вынужден"
 
     # ─── Header: Директору + адрес продавца + блок потребителя ───
+    _link_line = f"Профиль: {seller_link}\n" if seller_link else ""
     header_text = (
-        f"Директору {seller}\n"
+        f"{_format_addressee(seller)}\n"
         f"Адрес: {seller_address}\n"
+        f"{_link_line}"
         f"\n"
         f"от гр. {requisites['фио']}\n"
         f"{F_PROZHIV} по адресу:\n"

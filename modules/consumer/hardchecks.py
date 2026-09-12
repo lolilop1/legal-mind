@@ -119,13 +119,49 @@ def hard_pre_check(user_data: dict) -> Optional[dict]:
             "или маркетплейса.",
         )
 
-    # 7. Нет адреса продавца.
+    # 7. Адрес продавца — обязателен для юрлиц / ИП / самозанятых.
     seller_address = (user_data.get("адрес_продавца") or "").strip()
-    if not seller_address:
+    seller_link = (user_data.get("ссылка_продавца") or "").strip()
+
+    if not seller_address and _is_legal_entity(seller):
         return _stop(
-            "Не указан адрес продавца или исполнителя. Без него претензию "
-            "некуда отправить — укажите юридический адрес компании "
-            "(можно найти на сайте продавца или в чеке).",
+            "Не указан адрес продавца. Для организации или ИП его можно "
+            "найти в ЕГРЮЛ/ЕГРИП, в чеке или на сайте. Без адреса претензию "
+            "некуда отправить.",
+        )
+
+    # Физлицо: без адреса и без ссылки — претензия бессмысленна.
+    if not seller_address and not seller_link:
+        return _stop(
+            "Для продавца-физлица нужен хотя бы один идентификатор: "
+            "либо адрес, либо ссылка на профиль/объявление (Авито, "
+            "Telegram, ВК). Без этого претензию некуда отправить, "
+            "а в суде невозможно идентифицировать ответчика.",
         )
 
     return None
+
+
+_LEGAL_PREFIXES = ("ООО", "АО", "ПАО", "ЗАО", "ОАО", "НКО",
+                   "МУП", "ГУП", "ТСЖ", "ТД", "ТЦ")
+
+
+def _is_legal_entity(seller: str) -> bool:
+    """True если продавец похож на организацию, ИП или самозанятого."""
+    s = (seller or "").strip().lower()
+    if not s:
+        return True  # пусто → требуем адрес (консервативно)
+
+    upper = s.upper()
+    for prefix in _LEGAL_PREFIXES:
+        if upper.startswith(prefix + " ") or upper.startswith(prefix + "."):
+            return True
+
+    if upper.startswith("ИП ") or upper.startswith("ИП."):
+        return True
+
+    if "самозанят" in s:
+        return True
+
+    # Физлицо без статуса
+    return False

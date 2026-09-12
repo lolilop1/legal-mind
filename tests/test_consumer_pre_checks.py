@@ -74,13 +74,32 @@ def main():
     check(not any("Адрес продавца" in k.label for k in r5a.missing_critical),
           "Кейс 5а: адрес продавца НЕ в critical (он передан)")
 
-    # ─── Кейс 5б: продавец есть, адреса нет ───
+    # ─── Кейс 5б: физлицо БЕЗ адреса и БЕЗ ссылки → critical ───
     r5b = run_consumer_pre_checks({
         "проблема": "купил телефон, сломался",
-        "продавец": "М.Видео",
+        "продавец": "Мария Петрова",
     })
-    check(any("Адрес продавца" in k.label for k in r5b.missing_critical),
-          "Кейс 5б: critical = Адрес продавца")
+    check(any("Адрес или ссылка" in k.label for k in r5b.missing_critical),
+          "Кейс 5б: физлицо без адреса и без ссылки — critical")
+
+    # ─── Кейс 5б2: физлицо со ссылкой (без адреса) → OK ───
+    r5b2 = run_consumer_pre_checks({
+        "проблема": "купил телефон, сломался",
+        "продавец": "Мария Петрова",
+        "ссылка_продавца": "https://www.avito.ru/user/12345",
+    })
+    check(not r5b2.is_blocked,
+          "Кейс 5б2: физлицо со ссылкой — не блокируется")
+    check(any("Ссылка на профиль" in k.label for k in r5b2.known),
+          "Кейс 5б2: ссылка попала в known")
+
+    # ─── Кейс 5в: ООО без адреса — адрес critical ───
+    r5v = run_consumer_pre_checks({
+        "проблема": "купил телефон, сломался",
+        "продавец": "ООО «М.Видео»",
+    })
+    check(any("Адрес продавца" in k.label for k in r5v.missing_critical),
+          "Кейс 5в: ООО — адрес в critical")
 
     # ─── Кейс 6: дата покупки не указана — опциональное ───
     r6 = run_consumer_pre_checks({

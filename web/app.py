@@ -39,13 +39,13 @@ from modules.noise.pre_checks import run_noise_pre_checks
 from modules.consumer.engine import process_consumer
 from modules.consumer.pre_checks import run_consumer_pre_checks
 from modules.consumer.pdf import generate_pdf as pdf_consumer
-from modules.consumer.hardchecks import hard_pre_check as hardcheck_consumer
+from modules.consumer.hardchecks import hard_pre_check as hardcheck_consumer, _is_legal_entity
 from modules.consumer import configs as consumer_configs
 
 from core.trace import build_trace
 
 from core.name_declension import decline_fio, detect_gender
-from core.phone_check import validate_phone
+from core.phone_check import validate_phone, normalize_phone
 from core.llm import call_alice_flash
 from core import case_db
 from core.labels import problem_type_label, doc_type_label
@@ -567,6 +567,7 @@ def submit():
     if problem_type == "consumer":
         user_data["продавец"] = request.form.get("продавец", "").strip()
         user_data["адрес_продавца"] = request.form.get("адрес_продавца", "").strip()
+        user_data["ссылка_продавца"] = request.form.get("ссылка_продавца", "").strip()
         user_data["дата_покупки"] = request.form.get("дата_покупки", "").strip()
 
 # ─── Собираем ВСЕ ошибки валидации сразу ───
@@ -578,10 +579,26 @@ def submit():
     if not request.form.get("фио", "").strip():
         errors.append("Заполните ФИО")
     if problem_type == "consumer":
-        if not request.form.get("продавец", "").strip():
+        _seller = request.form.get("продавец", "").strip()
+        _seller_addr = request.form.get("адрес_продавца", "").strip()
+        _seller_link = request.form.get("ссылка_продавца", "").strip()
+
+        if not _seller:
             errors.append("Заполните поле «Продавец / исполнитель»")
-        if not request.form.get("адрес_продавца", "").strip():
-            errors.append("Заполните поле «Адрес продавца»")
+        elif _is_legal_entity(_seller):
+            if not _seller_addr:
+                errors.append(
+                    "Заполните поле «Адрес продавца» — для ООО/ИП он обязателен "
+                    "(есть в ЕГРЮЛ/ЕГРИП, чеке или на сайте)."
+                )
+        else:
+            # Физлицо
+            if not _seller_addr and not _seller_link:
+                errors.append(
+                    "Для продавца-физлица нужен хотя бы адрес ИЛИ ссылка "
+                    "на профиль/объявление — без этого претензию некуда "
+                    "отправить."
+                )
 
     phone_raw = request.form.get("телефон", "").strip()
     if not phone_raw:
@@ -602,7 +619,7 @@ def submit():
     requisites = {
         "фио": decline_fio(request.form.get("фио", "").strip()),
         "адрес": format_address(user_data["адрес"]),
-        "телефон": phone_raw,
+        "телефон": normalize_phone(phone_raw),
     }
     organization = request.form.get("organization", "").strip()
 
@@ -618,6 +635,7 @@ def submit():
         consumer_cfg = _get_consumer_config(consumer_scenario)
         requisites["продавец"] = user_data.get("продавец") or "Продавец"
         requisites["адрес_продавца"] = user_data.get("адрес_продавца") or ""
+        requisites["ссылка_продавца"] = user_data.get("ссылка_продавца") or ""
         _fio_raw = request.form.get("фио", "").strip()
         requisites["пол"] = detect_gender(_fio_raw) or "masc"
         result = process_consumer_module(user_data, consumer_scenario)
