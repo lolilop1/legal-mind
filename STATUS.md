@@ -17,7 +17,7 @@ Legal Trace (этап 5)                   | OK
 Автодеплой (этап 8)                    | OK
 Git + .gitignore                       | OK
 Модульная структура                    | OK
-Тесты (15 файлов, 289 проверок)        | OK (289/289)
+Тесты (15 файлов, 304 проверки)        | OK (304/304)
 Adversarial (29 кейсов)                | OK (29/29)
 Домен + HTTPS                          | ждёт оплаты
 Модуль 1 (Потребитель, 4 сценария)     | OK
@@ -26,7 +26,7 @@ Adversarial (29 кейсов)                | OK (29/29)
 ## Что сделано
 
 ### Модульность
-Переехали с плоской на модульную. 12 файлов тестов, 229 проверок. systemd + nginx обновлены.
+Переехали с плоской на модульную. 15 файлов тестов, 304 проверок. systemd + nginx обновлены.
 
 ### CASE (этап 3)
 core/case_db.py, core/case_id.py, web/schema.sql. Экран /my, карточка /case. core/labels.py.
@@ -42,6 +42,11 @@ RULES_DATE, TEMPLATE_VERSION. PDF-подвал. Блок в карточке.
 
 ### Автодеплой (этап 8)
 GitHub репо lolilop1/legal-mind. Deploy Key. workflow deploy.yml. git push → 30 сек.
+
+### Модуль 1 (Потребитель)
+4 сценария: defect, return14, marketplace, service. Авто-детект по тексту.
+Умная шапка PDF (ООО/ИП/самозанятый/физлицо/ник). Физлица — адрес ИЛИ ссылка на профиль.
+Нормализация телефона. Inline-валидация формы. Air Datepicker.
 
 ### Документация
 README, STATUS, ROADMAP, docs/ARCHITECTURE, DECISIONS, MODULES, CHANGELOG, SETUP.

@@ -1,5 +1,30 @@
 ﻿# Legal Mind — Changelog
 
+## 2026-09-12 (Модуль 1: умная шапка, валидация, нормализация)
+
+### Добавлено
+- modules/consumer/pdf.py: _format_addressee — умная шапка PDF
+  - ООО/АО/ПАО → «Директору X», ИП/самозанятый → «X»
+  - ФИО физлица → «Гражданину/Гражданке X» (по полу, дательный)
+  - Ники → «Продавцу X»
+- core/name_declension.py: decline_fio_dative, detect_gender_by_name
+- core/phone_check.py: normalize_phone → «+7 (XXX) XXX-XX-XX»
+- Физлица-продавцы: адрес НЕ обязателен, но нужен адрес ИЛИ ссылка
+- Поле «Ссылка на профиль/объявление» в форме
+- Inline-валидация: lmValidateStep, lmShowFieldError, lmMapServerErrors
+- Перехват submit — проверка всех шагов, маппинг серверных ошибок в поля
+
+### Исправлено
+- Regex одинаковых цифр в телефоне
+- deploy.yml: find для рекурсивного chmod
+
+### Тесты
+- test_consumer_addressee.py — 13
+- test_phone_check.py — 30 (нормализация + РФ-валидация)
+- Всего: 15 файлов, 304 проверки
+
+---
+
 ## 2026-09-12 (Модуль 1: Потребитель)
 
 ### Добавлено

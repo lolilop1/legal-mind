@@ -31,23 +31,19 @@ mkdir -p /opt/legal_mind
 chown legal:legal /opt/legal_mind
 ```
 
-## 4. Копирование файлов
+## 4. Клонирование через git
 
-Открой **новое окно PowerShell** на своей машине (SSH-сессию оставь открытой).
+На сервере (в SSH-сессии):
 
-```powershell
-cd C:\Users\Ilay\Desktop\LegalMind\с_дипсик\в1
-scp -r * root@201.24.49.121:/opt/legal_mind/
-```
+    git clone git@github.com:lolilop1/legal-mind.git /opt/legal_mind
+    cd /opt/legal_mind
 
-Проверь, что в `/opt/legal_mind/` оказались:
-- `app.py`
-- `templates/`
-- `static/`
-- `requirements.txt`
-- `.env`
-- `legal_mind_module2_*.py`
-- `legal_mind_module3_*.py`
+Если Deploy Key ещё не настроен — см. раздел «Автодеплой».
+
+В /opt/legal_mind/ должно быть:
+- core/, region/, modules/, web/, deploy/
+- web/.env — создаётся вручную (в git его нет)
+- web/requirements.txt
 
 ## 5. Права
 
@@ -174,19 +170,15 @@ http://201.24.49.121/
 
 ## 12. Обновление после правок кода
 
-С локальной машины:
+Автодеплой:
 
-```powershell
-cd C:\Users\Ilay\Desktop\LegalMind\с_дипсик\в1
-scp -r * root@201.24.49.121:/opt/legal_mind/
-```
+    git push origin main
 
-На сервере:
+GitHub Actions → SSH → git pull → chmod → restart → health check.
 
-```bash
-chown -R legal:legal /opt/legal_mind
-systemctl restart legal-mind
-```
+Резерв (если Actions недоступен):
+
+    .\deploy\deploy.ps1
 
 ## 13. Логи и диагностика
 

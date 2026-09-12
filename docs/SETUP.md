@@ -46,7 +46,7 @@ python -c "import secrets; print(secrets.token_hex(32))"
 6. Тесты:
    cd ..
    python tests\run_all.py
-   Ожидание: 12 файлов, 229 проверок, упало 0.
+   Ожидание: 15 файлов, 304 проверки, упало 0.
 
 7. Запуск:
    cd web
@@ -64,8 +64,11 @@ python -c "import secrets; print(secrets.token_hex(32))"
    mkdir -p /opt/legal_mind
    chown legal:legal /opt/legal_mind
 
-3. Заливка (первый раз — с локальной машины):
-   scp -r core region modules web deploy root@201.24.49.121:/opt/legal_mind/
+3. Заливка — через git (автодеплой):
+   git push origin main
+   → GitHub Actions → SSH на сервер → git pull → restart
+
+   Первый раз (с сервера): git clone git@github.com:lolilop1/legal-mind.git /opt/legal_mind
 
 4. Права:
    cd /opt/legal_mind
