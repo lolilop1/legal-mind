@@ -1,4 +1,30 @@
-﻿# Legal Mind — Changelog
+# Legal Mind — Changelog
+
+## 2026-09-13 (security: IDOR, атомарность CASE, SECRET_KEY, openai)
+
+### Исправлено
+- IDOR: /case/<ref>/pdf/<doc_id> отдавал документ по глобальному id
+  без проверки принадлежности делу — теперь фильтр по (id, case_number)
+- core/case_db.py: create_case — атомарная генерация case_number
+  (BEGIN IMMEDIATE + retry на IntegrityError); раньше была гонка
+  между воркерами gunicorn
+- web/app.py: SECRET_KEY обязателен — сервис не стартует с
+  небезопасным дефолтом вместо явной ошибки
+- web/requirements.txt: openai>=1.50 → openai>=1.66
+  (client.responses.create требует 1.66+)
+
+### Тесты
+- test_case_db.py: +1 регресс-проверка на IDOR
+  (get_document_content с чужим case_number → None)
+- Всего: 15 файлов, 305 проверок (по факту прогона run_all.py).
+  Сразу после фикса IDOR run_all.py показывал 281 — test_case_db.py
+  падал с TypeError до своей финальной строки "Total: ...", и все
+  24 его проверки не попадали в агрегат. После фикса теста (передача
+  case_number в get_document_content) файл долистывает до конца,
+  агрegat корректный: 305. Ранее в доках заявлялось 304 — было
+  до IDOR-регресс-проверки, не перепроверялось прогоном.
+
+---
 
 ## 2026-09-12 (Модуль 1: умная шапка, валидация, нормализация)
 
