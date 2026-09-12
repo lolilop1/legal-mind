@@ -25,7 +25,7 @@ jobs:
             chmod 600 web/.env
             chmod 755 core region modules web deploy
             chmod -R 755 web/static
-            chmod 644 web/static/*
+            find web/static -type f -exec chmod 644 {} \;
             systemctl restart legal-mind
             sleep 3
             curl -sf http://127.0.0.1:5000/health || (echo "HEALTH FAIL" && exit 1)
