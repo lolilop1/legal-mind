@@ -23,7 +23,7 @@ _ENV_PATH = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=_ENV_PATH if _ENV_PATH.exists() else None)
 
 # ─── Импорты наших модулей ───
-from flask import Flask, render_template, request, send_file, abort, session
+from flask import Flask, render_template, request, send_file, abort, session, redirect
 
 from modules.uk.hardchecks import hard_pre_check as hardcheck_uk
 from modules.uk.entity_check import check_entity_recall as recall_uk
@@ -34,9 +34,17 @@ from modules.noise.pdf import generate_pdf as pdf_noise
 
 from modules.uk.pre_checks import run_uk_pre_checks
 from modules.noise.pre_checks import run_noise_pre_checks
+
+# ─── Модуль 1 (Потребитель) ───
+from modules.consumer.engine import process_consumer
+from modules.consumer.pre_checks import run_consumer_pre_checks
+from modules.consumer.pdf import generate_pdf as pdf_consumer
+from modules.consumer.hardchecks import hard_pre_check as hardcheck_consumer
+from modules.consumer import configs as consumer_configs
+
 from core.trace import build_trace
 
-from core.name_declension import decline_fio
+from core.name_declension import decline_fio, detect_gender
 from core.phone_check import validate_phone
 from core.llm import call_alice_flash
 from core import case_db
@@ -376,6 +384,57 @@ def process_noise(user_data: dict) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════════
+#  Модуль 1 (Потребитель)
+# ═══════════════════════════════════════════════════════════════
+
+def _get_consumer_config(scenario: str):
+    """Возвращает CONFIG по коду сценария или None."""
+    if scenario == "defect":
+        from modules.consumer.configs.defect import CONFIG
+        return CONFIG
+    if scenario == "return14":
+        from modules.consumer.configs.return14 import CONFIG
+        return CONFIG
+    if scenario == "marketplace":
+        from modules.consumer.configs.marketplace import CONFIG
+        return CONFIG
+    if scenario == "service":
+        from modules.consumer.configs.service import CONFIG
+        return CONFIG
+    return None
+
+
+def _resolve_consumer_scenario(user_data: dict) -> str:
+    """Определяет сценарий: явный -> детектор -> defect."""
+    from modules.consumer.scenario_detect import detect_scenario
+    explicit = (user_data.get("scenario") or "").strip()
+    if explicit in ("defect", "return14", "marketplace", "service"):
+        return explicit
+    detected = detect_scenario(user_data.get("проблема", ""))
+    if detected:
+        log.info("Сценарий consumer: %s", detected)
+        return detected
+    log.info("Сценарий consumer не определён, fallback defect")
+    return "defect"
+
+
+def process_consumer_module(user_data: dict, scenario: str) -> dict:
+    """Hard-check + engine для consumer."""
+    hc = hardcheck_consumer(user_data)
+    if hc is not None:
+        return {
+            "kind": "stop",
+            "reason": hc["stop_reason"],
+            "emergency": hc.get("emergency", False),
+            "stop_kind": "hard_check",
+            "retried": False,
+        }
+    result = process_consumer(user_data, scenario)
+    result["scenario"] = scenario
+    return result
+
+
+# ═══════════════════════════════════════════════════════════════
 #  PDF
 # ═══════════════════════════════════════════════════════════════
 
@@ -403,6 +462,32 @@ def _make_pdf_response(pdf_bytes: bytes):
         as_attachment=True,
         download_name="zayavlenie.pdf",
     )
+
+
+def _build_trace_dict(problem_type: str, user_data: dict, result: dict) -> dict | None:
+    """Собирает Legal Trace для DNA."""
+    try:
+        if problem_type == "uk":
+            norms = result.get("parsed", {}).get("применимые_нормы") or []
+            source = ""
+        elif problem_type == "noise":
+            ld = result.get("law_data") or {}
+            norms = [ld["закон"]] if ld.get("закон") else []
+            source = ld.get("url", "")
+        else:
+            norms = []
+            source = ""
+
+        trace = build_trace(
+            problem_type=problem_type,
+            problem_text=user_data.get("проблема", ""),
+            norms=norms,
+            source=source,
+        )
+        return trace.to_dict() if not trace.is_empty() else None
+    except Exception as e:
+        log.warning("build_trace упал: %s", e)
+        return None
 
 
 def _build_dna(problem_type: str, user_data: dict, result: dict, precheck=None) -> dict:
@@ -442,11 +527,13 @@ def _build_dna(problem_type: str, user_data: dict, result: dict, precheck=None) 
     return dna
 
 
-def _build_engine_version(problem_type: str) -> str:
+def _build_engine_version(problem_type: str, scenario: str = "") -> str:
     if problem_type == "uk":
         return "uk-01"
     if problem_type == "noise":
         return "noise-01"
+    if problem_type == "consumer" and scenario:
+        return f"consumer-{scenario}-01"
     return f"{problem_type}-01"
 
 
@@ -477,6 +564,10 @@ def submit():
         "дата_начала": request.form.get("дата_начала", "").strip(),
         "обращались_ранее": request.form.get("обращались_ранее", "").strip() or "нет",
     }
+    if problem_type == "consumer":
+        user_data["продавец"] = request.form.get("продавец", "").strip()
+        user_data["адрес_продавца"] = request.form.get("адрес_продавца", "").strip()
+        user_data["дата_покупки"] = request.form.get("дата_покупки", "").strip()
 
 # ─── Собираем ВСЕ ошибки валидации сразу ───
     errors = []
@@ -486,6 +577,11 @@ def submit():
         errors.append("Заполните адрес")
     if not request.form.get("фио", "").strip():
         errors.append("Заполните ФИО")
+    if problem_type == "consumer":
+        if not request.form.get("продавец", "").strip():
+            errors.append("Заполните поле «Продавец / исполнитель»")
+        if not request.form.get("адрес_продавца", "").strip():
+            errors.append("Заполните поле «Адрес продавца»")
 
     phone_raw = request.form.get("телефон", "").strip()
     if not phone_raw:
@@ -512,9 +608,19 @@ def submit():
 
     log.info("problem_type=%s org=%r addr=%r", problem_type, organization, user_data["адрес"])
 
+    consumer_cfg = None
+    consumer_scenario = None
     if problem_type == "uk":
         requisites["ук_название"] = organization or "Управляющая компания"
         result = process_uk(user_data)
+    elif problem_type == "consumer":
+        consumer_scenario = _resolve_consumer_scenario(user_data)
+        consumer_cfg = _get_consumer_config(consumer_scenario)
+        requisites["продавец"] = user_data.get("продавец") or "Продавец"
+        requisites["адрес_продавца"] = user_data.get("адрес_продавца") or ""
+        _fio_raw = request.form.get("фио", "").strip()
+        requisites["пол"] = detect_gender(_fio_raw) or "masc"
+        result = process_consumer_module(user_data, consumer_scenario)
     else:
         requisites["адресат"] = organization or "Начальнику ОВД по району"
         result = process_noise(user_data)
@@ -529,6 +635,8 @@ def submit():
             try:
                 if problem_type == "uk":
                     precheck_on_stop = run_uk_pre_checks(user_data)
+                elif problem_type == "consumer":
+                    precheck_on_stop = run_consumer_pre_checks(user_data)
                 else:
                     precheck_on_stop = run_noise_pre_checks(user_data, extras={})
                 if precheck_on_stop.is_blocked and precheck_on_stop.known:
@@ -566,6 +674,16 @@ def submit():
             "template_version": TEMPLATE_VERSION,
         }
         extra_log = ""
+    elif problem_type == "consumer":
+        normalized = {
+            "описание_проблемы_формальное": parsed["описание_проблемы_формальное"],
+            "требование": parsed.get("требование", ""),
+            "применимые_нормы": parsed.get("применимые_нормы") or [],
+            "engine_version": _build_engine_version(problem_type, consumer_scenario),
+            "rules_date": RULES_DATE,
+            "template_version": TEMPLATE_VERSION,
+        }
+        extra_log = f"scenario={consumer_scenario}"
     else:
         law_data = result.get("law_data")
         normalized = {
@@ -583,6 +701,8 @@ def submit():
     # ─── Pre-checks (Confidence / UNKNOWN) ───
     if problem_type == "uk":
         precheck = run_uk_pre_checks(user_data)
+    elif problem_type == "consumer":
+        precheck = run_consumer_pre_checks(user_data)
     else:
         precheck = run_noise_pre_checks(
             user_data,
@@ -608,8 +728,22 @@ def submit():
             missing_optional=precheck.missing_optional,
         )
 
-    pdf_bytes = _make_pdf_bytes(problem_type, requisites, normalized)
+    if problem_type == "consumer":
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+            tmp_path = f.name
+        try:
+            pdf_consumer(tmp_path, requisites, normalized, config=consumer_cfg)
+            with open(tmp_path, "rb") as f:
+                pdf_bytes = f.read()
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+    else:
+        pdf_bytes = _make_pdf_bytes(problem_type, requisites, normalized)
 
+    case_ref = None
     try:
         dna = _build_dna(problem_type, user_data, result, precheck)
         case_info = case_db.create_case(
@@ -617,7 +751,7 @@ def submit():
             source_text=user_data["проблема"],
             user_data=user_data,
             dna=dna,
-            engine_version=_build_engine_version(problem_type),
+            engine_version=_build_engine_version(problem_type, consumer_scenario or ""),
             rules_version="2026.09",
             template_version="1.0",
         )
@@ -626,7 +760,7 @@ def submit():
             doc_type="zayavlenie",
             content=pdf_bytes,
             template_version="1.0",
-            engine_version=_build_engine_version(problem_type),
+            engine_version=_build_engine_version(problem_type, consumer_scenario or ""),
         )
         case_ref = f"{case_info['case_number']}-{case_info['case_uuid']}"
         _add_case_to_session(case_ref)
@@ -638,6 +772,11 @@ def submit():
         log.error("Не удалось сохранить CASE: %s", e)
         log_event(problem_type, len(user_data["проблема"]),
                   None, result.get("retried", False), True, extra_log)
+
+    # Если CASE сохранён — редирект на карточку с авто-скачиванием PDF.
+    # Если нет — отдаём PDF напрямую (fallback).
+    if case_ref:
+        return redirect(f"/case/{case_ref}?just_created=1")
 
     return _make_pdf_response(pdf_bytes)
 
@@ -661,12 +800,14 @@ def view_case(case_ref: str):
         abort(404)
 
     documents = case_db.get_documents(case_number)
+    just_created = request.args.get("just_created") == "1"
 
     return render_template(
         "case.html",
         case=case,
         documents=documents,
         case_ref=case_ref,
+        just_created=just_created,
     )
 
 
@@ -713,28 +854,3 @@ def health():
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000)
 
-
-def _build_trace_dict(problem_type: str, user_data: dict, result: dict) -> dict | None:
-    """Собирает Legal Trace для DNA."""
-    try:
-        if problem_type == "uk":
-            norms = result.get("parsed", {}).get("применимые_нормы") or []
-            source = ""
-        elif problem_type == "noise":
-            ld = result.get("law_data") or {}
-            norms = [ld["закон"]] if ld.get("закон") else []
-            source = ld.get("url", "")
-        else:
-            norms = []
-            source = ""
-
-        trace = build_trace(
-            problem_type=problem_type,
-            problem_text=user_data.get("проблема", ""),
-            norms=norms,
-            source=source,
-        )
-        return trace.to_dict() if not trace.is_empty() else None
-    except Exception as e:
-        log.warning("build_trace упал: %s", e)
-        return None

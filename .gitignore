@@ -55,3 +55,11 @@ _archive/
 reorganize.ps1
 reorganize2.ps1
 "Текстовый документ.txt"
+# Контекст для чатов
+_CONTEXT_FULL.md
+
+
+# ─── Артефакты consumer-теста и локальные утилиты ───
+test_consumer_output/
+make_context.ps1
+

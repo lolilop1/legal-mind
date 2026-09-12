@@ -1,5 +1,30 @@
 ﻿# Legal Mind — Changelog
 
+## 2026-09-12 (Модуль 1: Потребитель)
+
+### Добавлено
+- modules/consumer/ — engine, hardchecks, pre_checks, pdf, scenario_detect
+- 4 конфига: defect (ст. 18), return14 (ст. 25), marketplace (ст. 26.1), service (ст. 29)
+- Авто-определение сценария по тексту (scenario_detect.py)
+- Gender detection в PDF (проживающий/проживающей, вынужден/вынуждена)
+- Wizard-форма (3 шага): проблема → детали → контакты
+- Air Datepicker для даты покупки (mobile-friendly, bottom sheet)
+- Авто-скачивание PDF + редирект в карточку дела (?just_created=1)
+- Pre-check на STOP работает для consumer
+
+### Изменено
+- app.py: process_consumer_module + ветка consumer в submit
+- core/name_declension.py: detect_gender работает и с родительным падежом
+- index.html: 3-шаговый wizard вместо одной длинной формы
+
+### Тесты
+- test_consumer_hardchecks.py — 18
+- test_consumer_pre_checks.py — 15
+- test_consumer_scenario.py — 27
+- Всего: 15 файлов, 289 проверок
+
+---
+
 ## 2026-09-11 (доки: раздел Безопасность в README)
 
 ### Добавлено

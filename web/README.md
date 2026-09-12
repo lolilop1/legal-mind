@@ -1,86 +1,86 @@
 # Legal Mind — Web
 
-Веб-приложение: HTML-форма → PDF-заявление.
-Развёрнуто на VPS: **http://201.24.49.121/**
+Веб-приложение: HTML-форма → PDF-документ.
+Прод: http://201.24.49.121/
 
 ## Как пользоваться
 
-1. Открой в браузере **http://201.24.49.121/**
-2. Выбери тип проблемы (УК / Шум).
-3. Заполни поля.
-4. Нажми «Составить заявление» — скачается PDF.
-5. Если форма вернёт стоп-сообщение — исправь данные и попробуй снова.
+1. Открой http://201.24.49.121/
+2. Выбери тип проблемы:
+   - Жалоба в УК — уборка, отопление, лифт, крыша, домофон
+   - Нарушение тишины — музыка, ремонт, крики, лай собаки
+   - Защита прав потребителя — товар, услуга, маркетплейс
+3. Заполни поля (форма пошаговая — 3 шага)
+4. Нажми «Составить заявление» — PDF скачается автоматически, откроется карточка дела
+5. Если форма вернёт стоп-сообщение — исправь данные и попробуй снова
 
 ## Что внутри
 
-- `app.py` — Flask-приложение.
-- `templates/` — HTML-шаблоны.
-- `static/` — CSS.
-- `legal_mind_module2_*.py` — логика жалобы в УК.
-- `legal_mind_module3_*.py` — логика жалобы на шум.
-- `.env` — API-ключи (не в git!).
-- `requirements.txt` — зависимости Python.
+- app.py — Flask-приложение (роуты, process_uk / process_noise / process_consumer)
+- templates/ — HTML-шаблоны (index, my, case, stop, pre_check_blocked)
+- static/ — CSS + Air Datepicker
+- .env — API-ключи (не в git!)
+- requirements.txt — зависимости Python
+- schema.sql — схема БД CASE
+
+Логика модулей — в modules/ (на уровень выше):
+
+- modules/uk/ — жалоба в УК
+- modules/noise/ — жалоба на шум
+- modules/consumer/ — защита прав потребителя
+- core/ — общий код (llm, case_db, name_declension, trace, pre_checks)
+- region/ — определение региона (для шума)
 
 ## Сервер
 
 - Провайдер: Timeweb Cloud
-- IP: **201.24.49.121**
+- IP: 201.24.49.121
 - ОС: Ubuntu 22.04 / 24.04
-- Процесс-менеджер: systemd (`legal-mind.service`)
+- Процесс-менеджер: systemd (legal-mind.service)
 - Веб-сервер: nginx (reverse proxy на 127.0.0.1:5000)
 - Application server: gunicorn (2 воркера)
 
 ## Развёртывание
 
-См. `deploy.md` — полная инструкция с нуля.
+Полная инструкция — docs/SETUP.md (корень репо).
 
 ## Обновление кода
 
-С локальной машины:
+Автодеплой через git push:
 
-```powershell
-cd C:\Users\Ilay\Desktop\LegalMind\с_дипсик\в1
-scp -r * root@201.24.49.121:/opt/legal_mind/
-```
+    git push origin main
 
-На сервере:
+GitHub Actions → SSH на сервер → git pull → restart → health check (30 сек).
 
-```bash
-chown -R legal:legal /opt/legal_mind
-systemctl restart legal-mind
-```
+Резервный ручной деплой (если Actions недоступен):
+
+    .\deploy\deploy.ps1
 
 ## Перезапуск / статус
 
-```bash
-systemctl status legal-mind
-systemctl restart legal-mind
-systemctl stop legal-mind
-journalctl -u legal-mind -f     # живой хвост логов
-```
+    systemctl status legal-mind
+    systemctl restart legal-mind
+    journalctl -u legal-mind -f
 
-## Переменные окружения (`.env`)
+## Переменные окружения (.env)
 
-```
-YANDEX_API_KEY   — API-ключ Yandex Cloud
-YANDEX_FOLDER_ID — folder ID Yandex Cloud
-```
+    YANDEX_API_KEY   — API-ключ Yandex Cloud
+    YANDEX_FOLDER_ID — folder ID Yandex Cloud
+    SECRET_KEY       — Flask session
 
-Ключ получается в Yandex Cloud: сервисный аккаунт → роль `ai.languageModels.user`
-→ API-ключ.
+Ключ получается в Yandex Cloud: сервисный аккаунт → роль ai.languageModels.user → API-ключ.
 
 ## Проверка доступности
 
-Из браузера: `http://201.24.49.121/`
-Из консоли сервера: `curl http://127.0.0.1:5000/health`
+Из браузера: http://201.24.49.121/
+Из консоли сервера: curl http://127.0.0.1:5000/health
 
 Ожидаемый ответ:
-```json
-{"status": "ok", "llm_configured": true}
-```
+
+    {"status": "ok", "llm_configured": true, "cases_total": 0}
 
 ## Что дальше
 
-- Собрать реальные кейсы от 5–10 знакомых через форму.
-- По результатам — доработки.
-- Опционально: домен вместо IP, HTTPS через Let's Encrypt.
+- Собрать реальные кейсы от 5-10 знакомых по всем 3 модулям
+- По результатам — доработки
+- Домен legalmind.su + HTTPS через Let's Encrypt

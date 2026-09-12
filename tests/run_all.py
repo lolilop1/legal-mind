@@ -31,6 +31,10 @@ _TESTS = [
     "test_address.py",
     "test_pre_checks.py",
     "test_trace.py",
+    # Модуль 1 (Потребитель)
+    "test_consumer_hardchecks.py",
+    "test_consumer_pre_checks.py",
+    "test_consumer_scenario.py",
 ]
 
 # Паттерны для извлечения "Total: X Passed: Y Failed: Z"

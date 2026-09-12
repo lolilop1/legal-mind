@@ -27,18 +27,37 @@ except ImportError:
 
 
 _CYRILLIC_RE = re.compile(r"^[А-ЯЁа-яё\-\s]+$")
+# Именительный падеж
 _FEMALE_MIDDLE_SUFFIXES = ("овна", "евна", "ична", "инична")
 _MALE_MIDDLE_SUFFIXES = ("ович", "евич", "ич")
+# Родительный падеж (уже склонённое ФИО — люди часто так вводят)
+_FEMALE_MIDDLE_GENITIVE = ("овны", "евны", "ичны", "иничны")
+_MALE_MIDDLE_GENITIVE = ("овича", "евича", "ича")
 
 
 def _detect_gender(middle_name: str) -> str | None:
-    """Определить род по отчеству. Возвращает 'femn', 'masc' или None."""
+    """Определить род по отчеству. Работает и с именительным, и с родительным падежом."""
     lower = middle_name.lower()
-    if lower.endswith(_FEMALE_MIDDLE_SUFFIXES):
+    if lower.endswith(_FEMALE_MIDDLE_SUFFIXES) or lower.endswith(_FEMALE_MIDDLE_GENITIVE):
         return "femn"
-    if lower.endswith(_MALE_MIDDLE_SUFFIXES):
+    if lower.endswith(_MALE_MIDDLE_SUFFIXES) or lower.endswith(_MALE_MIDDLE_GENITIVE):
         return "masc"
     return None
+
+def detect_gender(fio: str) -> str | None:
+    """Определяет пол по отчеству в ФИО.
+
+    Returns: 'masc' | 'femn' | None
+    Пример: "Иванов Иван Иванович" -> 'masc'
+            "Иванова Мария Петровна" -> 'femn'
+    """
+    raw = (fio or "").strip()
+    if not raw:
+        return None
+    parts = raw.split()
+    if len(parts) < 3:
+        return None
+    return _detect_gender(parts[2])
 
 
 def _inflect_genitive(word: str, kind: str | None = None,

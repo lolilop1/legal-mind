@@ -146,5 +146,34 @@
   </div>
 
 </div>
+
+{% if just_created and documents %}
+<div id="auto-download-notice" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #2e7d32; color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000;">
+  ✓ Документ создан — PDF скачивается...
+</div>
+<script>
+(function() {
+  // Убираем just_created из URL чтобы не качало при F5
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
+  // Авто-скачивание первого документа
+  var link = document.createElement('a');
+  link.href = "/case/{{ case_ref }}/pdf/{{ documents[0].id }}";
+  link.download = '';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  // Через 3 секунды скрываем уведомление
+  setTimeout(function() {
+    var n = document.getElementById('auto-download-notice');
+    if (n) n.style.display = 'none';
+  }, 3000);
+})();
+</script>
+{% endif %}
+
 </body>
 </html>
