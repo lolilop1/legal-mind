@@ -437,12 +437,13 @@ def _resolve_consumer_scenario(user_data: dict) -> str:
 
 def process_consumer_module(user_data: dict, scenario: str) -> dict:
     """Hard-check + engine для consumer."""
-    hc = hardcheck_consumer(user_data)
+    hc = hardcheck_consumer(user_data, scenario=scenario)
     if hc is not None:
         return {
             "kind": "stop",
             "reason": hc["stop_reason"],
             "emergency": hc.get("emergency", False),
+            "category": hc.get("category"),
             "stop_kind": "hard_check",
             "retried": False,
         }
@@ -668,7 +669,7 @@ def submit():
         _save_form_to_session(request.form)
 
         # Перед обычным стопом попробуем pre-check
-        if not result.get("emergency"):
+        if not result.get("emergency") and result.get("category") != "non_returnable":
             try:
                 if problem_type == "uk":
                     precheck_on_stop = run_uk_pre_checks(user_data)

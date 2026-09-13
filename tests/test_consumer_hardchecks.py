@@ -11,17 +11,20 @@ BASE = {
 }
 
 
-def check(problem, expected, label, overrides=None):
+def check(problem, expected, label, overrides=None, scenario=None):
     data = dict(BASE)
     data["проблема"] = problem
     if overrides:
         data.update(overrides)
-    r = hard_pre_check(data)
+    r = hard_pre_check(data, scenario=scenario)
 
     if expected == "OK":
         ok = r is None
     elif expected == "STOP":
         ok = r is not None and r["stop"]
+    elif expected == "STOP_NONRET":
+        ok = (r is not None and r.get("stop") is True
+              and r.get("category") == "non_returnable")
     else:
         raise ValueError(expected)
 
@@ -75,12 +78,69 @@ def main():
         ("купил смартфон, сломался, хочу вернуть",
          "STOP", "no seller", {"продавец": ""}),
 
+        # ─── STOP_NONRET: невозвратные товары в return14 (Пост. 2463) ───
+        ("купила трусы, не подошёл размер, хочу вернуть",
+         "STOP_NONRET", "невращ: трусы + return14",
+         None, "return14"),
+        ("купил лекарство, не подошло, хочу вернуть",
+         "STOP_NONRET", "невращ: лекарство + return14",
+         None, "return14"),
+        ("купила золотое кольцо, не понравилось, хочу вернуть",
+         "STOP_NONRET", "невращ: ювелирка + return14",
+         None, "return14"),
+        ("купила зубную щетку, не подошла",
+         "STOP_NONRET", "невращ: зубная щётка + return14",
+         None, "return14"),
+        ("купил носки, не подошли по размеру",
+         "STOP_NONRET", "невращ: носки + return14",
+         None, "return14"),
+        ("купила духи, не понравился запах",
+         "STOP_NONRET", "невращ: духи + return14",
+         None, "return14"),
+        ("купил книгу, не понравилась",
+         "STOP_NONRET", "невращ: книга + return14",
+         None, "return14"),
+        ("купил саженцы яблони, не прижились",
+         "STOP_NONRET", "невращ: саженцы + return14",
+         None, "return14"),
+
+        # ─── return14: обычные товары (НЕ блокируем) ───
+        ("купила куртку, не подошёл размер",
+         "OK", "return14: куртка — ок",
+         None, "return14"),
+        ("купил кроссовки, не подошли по цвету",
+         "OK", "return14: кроссовки — ок",
+         None, "return14"),
+        ("купила платье, не подошло",
+         "OK", "return14: платье — ок",
+         None, "return14"),
+
+        # ─── defect: невозвратные НЕ блокируем (ст. 18 работает) ───
+        ("купил лекарство, оно оказалось бракованным",
+         "OK", "невращ: лекарство + defect — ок (ст. 18)",
+         None, "defect"),
+        ("купила золотое кольцо, сломалось через день",
+         "OK", "невращ: ювелирка + defect — ок (ст. 18)",
+         None, "defect"),
+        ("купил носки, порвались после первой носки",
+         "OK", "невращ: носки + defect — ок (ст. 18)",
+         None, "defect"),
+
+        # ─── Без scenario — старые кейсы не ломаются ───
+        ("купила трусы, не подошёл размер, хочу вернуть",
+         "OK", "невращ: трусы без scenario — ок (legacy)"),
+
         # ─── STOP: нет адреса продавца ───
         ("купил смартфон, сломался, хочу вернуть",
          "STOP", "no seller address", {"адрес_продавца": ""}),
     ]
 
-    results = [check(*t) for t in tests]
+    results = []
+    for t in tests:
+        if len(t) == 5:
+            results.append(check(t[0], t[1], t[2], t[3], t[4]))
+        else:
+            results.append(check(*t))
 
     passed = sum(bool(r["ok"]) for r in results)
     failed = len(results) - passed
