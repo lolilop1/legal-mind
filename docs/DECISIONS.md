@@ -5,6 +5,30 @@
 
 ---
 
+## 2026-09-13 — Cookie flags + ProxyFix + убрали ПДн из логов
+
+**Контекст:** после security-ревью (IDOR) остались три некритичных, но
+важных момента.
+
+**Решение:**
+
+1. **Cookie flags** — HttpOnly=True, SameSite=Lax (всегда). Secure
+   включается условно через .env SESSION_COOKIE_SECURE (сейчас HTTPS
+   нет, иначе сессия бы не работала). Когда появится домен — одна
+   переменная в .env, и флаг включится.
+
+2. **ProxyFix** — nginx передаёт X-Forwarded-For, но Flask его
+   игнорировал (request.remote_addr всегда 127.0.0.1). Теперь
+   ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1) — правильный
+   IP клиента в логах.
+
+3. **ПДн в логах** — была строка
+   `log.info("... addr=%r", user_data["адрес"])` — адрес летел в
+   /opt/legal_mind/logs/requests.log открытым текстом. Заменили на
+   `addr_len=%d` — пишем только длину. Логи без ПДн = 152-ФЗ ок.
+
+---
+
 ## 2026-09-13 — Security-ревью: IDOR, атомарность CASE, SECRET_KEY
 
 **Контекст:** внешнее ревью кода нашло, что /case/<ref>/pdf/<doc_id>

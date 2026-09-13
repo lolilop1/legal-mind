@@ -24,6 +24,7 @@ load_dotenv(dotenv_path=_ENV_PATH if _ENV_PATH.exists() else None)
 
 # ─── Импорты наших модулей ───
 from flask import Flask, render_template, request, send_file, abort, session, redirect
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from modules.uk.hardchecks import hard_pre_check as hardcheck_uk
 from modules.uk.entity_check import check_entity_recall as recall_uk
@@ -103,6 +104,17 @@ if not SECRET_KEY:
         "python -c \"import secrets; print(secrets.token_hex(32))\""
     )
 app.secret_key = SECRET_KEY
+
+# ─── Безопасность cookie ───
+# SECURE включаем только когда есть HTTPS (иначе сессия не сохранится).
+# Появится домен + HTTPS → выставим в .env SESSION_COOKIE_SECURE=true
+_use_secure_cookie = os.getenv("SESSION_COOKIE_SECURE", "").lower() in ("1", "true", "yes")
+app.config["SESSION_COOKIE_SECURE"] = _use_secure_cookie
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+# ─── ProxyFix: правильный IP из X-Forwarded-For (nginx стоит спереди) ───
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # ─── Jinja-фильтр: код → русское название ───
 app.jinja_env.filters["problem_label"] = problem_type_label
@@ -628,7 +640,9 @@ def submit():
     }
     organization = request.form.get("organization", "").strip()
 
-    log.info("problem_type=%s org=%r addr=%r", problem_type, organization, user_data["адрес"])
+    # Не логируем адрес — это ПДн. Только тип проблемы и наличие организации.
+    log.info("problem_type=%s org_present=%s addr_len=%d",
+             problem_type, bool(organization), len(user_data.get("адрес", "")))
 
     consumer_cfg = None
     consumer_scenario = None

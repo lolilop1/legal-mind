@@ -1,5 +1,18 @@
 # Legal Mind — Changelog
 
+## 2026-09-13 (security round 2: cookie flags, ProxyFix, ПДн в логах)
+
+### Добавлено
+- web/app.py: cookie flags — SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE=Lax,
+  SESSION_COOKIE_SECURE (включается через .env когда появится HTTPS)
+- web/app.py: ProxyFix — правильный request.remote_addr из X-Forwarded-For
+
+### Исправлено
+- web/app.py: логирование ПДн — убран адрес из log.info,
+  теперь пишется только длина (addr_len) вместо значения
+
+---
+
 ## 2026-09-13 (security: IDOR, атомарность CASE, SECRET_KEY, openai)
 
 ### Исправлено
