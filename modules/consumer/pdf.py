@@ -59,6 +59,13 @@ def _find_font_pair() -> tuple[str, str, str]:
     )
 
 
+def _fmt_rub(value: float) -> str:
+    """12345.67 -> '12 345,67'."""
+    if value is None:
+        return "—"
+    return f"{value:,.2f}".replace(",", " ").replace(".", ",")
+
+
 def _mc(pdf: FPDF, height: float, text: str, align: str = "L") -> None:
     """multi_cell + X-cursor reset. Always safe to chain."""
     pdf.multi_cell(0, height, text, align=align)
@@ -327,6 +334,34 @@ def generate_pdf(output_path: str, requisites: dict, normalized: dict,
         "законодательством.",
         align="J",
     )
+
+    # ─── Расчёт неустойки (если есть) ───
+    calc = normalized.get("расчёт")
+    if calc:
+        pdf.ln(6)
+        pdf.set_font(family, style="B", size=11)
+        _mc(pdf, 6, "РАСЧЁТ НЕУСТОЙКИ:", align="L")
+        pdf.set_font(family, style="", size=11)
+
+        base_fmt = _fmt_rub(calc["base_amount"])
+        penalty_fmt = _fmt_rub(calc["penalty"])
+        total_fmt = _fmt_rub(calc["total"])
+
+        _mc(pdf, 5.5, f"    Сумма основного требования: {base_fmt} руб.", align="L")
+        _mc(
+            pdf, 5.5,
+            f"    Неустойка: {penalty_fmt} руб. "
+            f"({calc['rate_percent']}% × {calc['days_overdue']} дн. просрочки)",
+            align="L",
+        )
+        _mc(pdf, 5.5, f"    Итого к уплате: {total_fmt} руб.", align="L")
+        _mc(pdf, 5.5, f"    Основание: {calc['law']}.", align="L")
+        if calc.get("capped"):
+            _mc(
+                pdf, 5.5,
+                "    (неустойка ограничена ценой услуги — п. 5 ст. 28 ЗоЗПП)",
+                align="L",
+            )
 
     # ─── Date + signature ───
     pdf.ln(15)

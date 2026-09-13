@@ -43,6 +43,7 @@ from modules.consumer.pdf import generate_pdf as pdf_consumer
 from modules.consumer.hardchecks import hard_pre_check as hardcheck_consumer, _is_legal_entity
 from modules.consumer import configs as consumer_configs
 from modules.consumer.marketplaces import resolve_marketplace
+from modules.consumer.calculators import build_calculation as build_consumer_calc
 
 from core.trace import build_trace
 
@@ -186,6 +187,8 @@ def _save_form_to_session(form) -> None:
             "ссылка_продавца":  form.get("ссылка_продавца", ""),
             "дата_покупки":     form.get("дата_покупки", ""),
             "номер_заказа":     form.get("номер_заказа", ""),
+            "цена":             form.get("цена", ""),
+            "дата_обращения":   form.get("дата_обращения", ""),
         }
     except Exception as e:
         log.warning("Не удалось сохранить форму в session: %s", e)
@@ -595,6 +598,8 @@ def submit():
         user_data["ссылка_продавца"] = request.form.get("ссылка_продавца", "").strip()
         user_data["дата_покупки"] = request.form.get("дата_покупки", "").strip()
         user_data["номер_заказа"] = request.form.get("номер_заказа", "").strip()
+        user_data["цена"] = request.form.get("цена", "").strip()
+        user_data["дата_обращения"] = request.form.get("дата_обращения", "").strip()
 
         # Маркетплейс: автоподстановка юрадреса из справочника
         _mp = resolve_marketplace(user_data["продавец"])
@@ -737,6 +742,7 @@ def submit():
         }
         extra_log = ""
     elif problem_type == "consumer":
+        calc = build_consumer_calc(consumer_scenario, user_data)
         normalized = {
             "описание_проблемы_формальное": parsed["описание_проблемы_формальное"],
             "требование": parsed.get("требование", ""),
@@ -745,7 +751,11 @@ def submit():
             "rules_date": RULES_DATE,
             "template_version": TEMPLATE_VERSION,
         }
+        if calc:
+            normalized["расчёт"] = calc
         extra_log = f"scenario={consumer_scenario}"
+        if calc:
+            extra_log += f" | calc={calc['penalty']}"
     else:
         law_data = result.get("law_data")
         normalized = {

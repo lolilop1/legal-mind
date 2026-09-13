@@ -57,7 +57,7 @@ Python 3.14, Flask, gunicorn, nginx, systemd, fpdf2, pymorphy3, Alice AI Flash, 
 - modules/ — uk, noise, consumer
 - web/ — Flask
 - scripts/ — разовые утилиты
-- tests/ — 16 файлов, 414 проверок
+- tests/ — 17 файлов, 466 проверок
 - docs/ — документация
 - deploy/ — инфраструктура
 

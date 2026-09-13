@@ -1,5 +1,35 @@
 # Legal Mind — Changelog
 
+## 2026-09-13 (Модуль 1: калькулятор неустойки)
+
+### Добавлено
+- modules/consumer/calculators.py:
+  - parse_amount / parse_date — парсинг цены и даты из строк
+  - calculate_penalty(scenario, amount, demand_date, today) — расчёт
+    неустойки по ЗоЗПП
+  - build_calculation(scenario, user_data) — сборка из полей формы
+  - format_rub — формат «12 345,67»
+- Ставки: defect/return14/marketplace — 1%/день (ст. 22, 23);
+  service — 3%/день с cap = цена услуги (ст. 28, 31)
+- Срок исполнения требования — 10 дней от даты обращения
+
+### Интеграция
+- app.py: принимает «цена» и «дата_обращения»; если оба есть —
+  считает неустойку и кладёт в normalized[«расчёт»]
+- pdf.py: блок «РАСЧЁТ НЕУСТОЙКИ» — основное требование, неустойка
+  (с формулой % × дни), итого, основание
+- index.html: поля «Цена» и «Дата обращения» (Air Datepicker,
+  maxDate = сегодня)
+- _save_form_to_session: сохраняет цену и дату обращения
+
+### Тесты
+- tests/test_calculators.py — 52 проверки: parse_amount/date,
+  calculate_penalty (defect 1%, service 3% + cap, срок не истёк),
+  format_rub, build_calculation
+- Всего: 17 файлов, 466 проверок (было 414)
+
+---
+
 ## 2026-09-13 (Модуль 1: расширение норм по услугам — ст. 27-33)
 
 ### Добавлено

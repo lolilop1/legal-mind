@@ -113,6 +113,12 @@
 
         <label>Дата покупки</label>
         <input type="text" name="дата_покупки" id="date-purchase" placeholder="10.09.2026" value="{{ form_data.get('дата_покупки', '') if form_data else '' }}">
+
+        <label>Цена товара/услуги <span style="color:#888; font-weight:400;">(для расчёта неустойки, если знаете)</span></label>
+        <input type="text" name="цена" placeholder="Например: 50 000" value="{{ form_data.get('цена', '') if form_data else '' }}">
+
+        <label>Дата обращения к продавцу <span style="color:#888; font-weight:400;">(когда предъявили требование)</span></label>
+        <input type="text" name="дата_обращения" id="date-demand" placeholder="01.08.2026" value="{{ form_data.get('дата_обращения', '') if form_data else '' }}">
       </div>
 
       <div class="wizard-nav">
