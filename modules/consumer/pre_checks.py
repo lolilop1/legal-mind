@@ -1,4 +1,4 @@
-﻿"""Pre-checks для модуля 1 (Защита прав потребителя).
+"""Pre-checks для модуля 1 (Защита прав потребителя).
 
 Что критично для претензии:
 - товар/услуга (что куплено)
@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import datetime as _dt
 import re
 
 from core.pre_checks import (
@@ -121,6 +122,20 @@ _DATE_PATTERN = re.compile(
 )
 
 
+def _parse_purchase_date(raw: str):
+    """Парсит дату покупки из строки. Возвращает date или None."""
+    if not raw:
+        return None
+    s = raw.strip()
+    for fmt in ("%d.%m.%Y", "%d.%m.%y", "%d-%m-%Y", "%d-%m-%y",
+                "%d/%m/%Y", "%d/%m/%y"):
+        try:
+            return _dt.datetime.strptime(s, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
 def _match_first(text: str, patterns: list[tuple[str, str]]) -> str | None:
     for pattern, label in patterns:
         if re.search(pattern, text, re.IGNORECASE):
@@ -176,7 +191,8 @@ def _is_legal_entity_pre(seller: str) -> bool:
     return False
 
 
-def run_consumer_pre_checks(user_data: dict, extras: dict | None = None) -> PreCheckReport:
+def run_consumer_pre_checks(user_data: dict, extras: dict | None = None,
+                             scenario: str | None = None) -> PreCheckReport:
     report = PreCheckReport()
     problem = (user_data.get("проблема") or "").strip()
     seller = (user_data.get("продавец") or "").strip()
@@ -269,5 +285,37 @@ def run_consumer_pre_checks(user_data: dict, extras: dict | None = None) -> PreC
                 "Дата покупки",
                 "Когда купили — важно для соблюдения сроков предъявления требований.",
             )
+
+    # ─── Оговорка ст. 18: 15 дней для техсложных товаров ───
+    if scenario == "defect" and _TECH_COMPLEX_PRE.search(problem):
+        parsed_date = _parse_purchase_date(date_bought)
+        if not parsed_date:
+            in_problem_date = _DATE_PATTERN.search(problem)
+            if in_problem_date:
+                parsed_date = _parse_purchase_date(in_problem_date.group(0))
+
+        if parsed_date:
+            days = (_dt.date.today() - parsed_date).days
+            if days > 15:
+                add_known(
+                    report,
+                    "Срок с момента покупки",
+                    f"{days} дней — больше 15",
+                )
+                add_missing_optional(
+                    report,
+                    "Существенность недостатка",
+                    "По ст. 18 ЗоЗПП после 15 дней продавец вправе "
+                    "предложить ремонт вместо возврата денег, ЕСЛИ "
+                    "недостаток не существенный. Опишите подробнее: "
+                    "полная неработоспособность, повторный ремонт, "
+                    "невозможность ремонта и т.п.",
+                )
+            else:
+                add_known(
+                    report,
+                    "Срок с момента покупки",
+                    f"{days} дней — в пределах 15",
+                )
 
     return report

@@ -740,7 +740,7 @@ def submit():
     if problem_type == "uk":
         precheck = run_uk_pre_checks(user_data)
     elif problem_type == "consumer":
-        precheck = run_consumer_pre_checks(user_data)
+        precheck = run_consumer_pre_checks(user_data, scenario=consumer_scenario)
     else:
         precheck = run_noise_pre_checks(
             user_data,

@@ -119,6 +119,58 @@ def main():
     })
     check(not r7.is_blocked, "Кейс 7: marketplace не блокируется")
 
+    # ─── Кейс 8: defect + техсложный + >15 дней ───
+    import datetime as _dt
+    long_ago = (_dt.date.today() - _dt.timedelta(days=30)).strftime("%d.%m.%Y")
+    r8 = run_consumer_pre_checks(
+        {
+            "проблема": "купил смартфон Samsung, экран перестал работать",
+            "продавец": "М.Видео",
+            "адрес_продавца": "Москва",
+            "дата_покупки": long_ago,
+        },
+        scenario="defect",
+    )
+    check(not r8.is_blocked, "Кейс 8: >15 дней — не блокируется (это warning)")
+    check(any("Срок с момента покупки" in k.label for k in r8.known),
+          "Кейс 8: срок известен")
+    check(any("Существенность недостатка" in k.label
+              for k in r8.missing_optional),
+          "Кейс 8: предупреждение про существенность")
+
+    # ─── Кейс 9: defect + техсложный + <=15 дней ───
+    recent = (_dt.date.today() - _dt.timedelta(days=5)).strftime("%d.%m.%Y")
+    r9 = run_consumer_pre_checks(
+        {
+            "проблема": "купил смартфон Samsung, не включается",
+            "продавец": "М.Видео",
+            "адрес_продавца": "Москва",
+            "дата_покупки": recent,
+        },
+        scenario="defect",
+    )
+    check(not r9.is_blocked, "Кейс 9: <=15 дней — не блокируется")
+    check(any("в пределах 15" in (k.value or "")
+              for k in r9.known if "Срок" in k.label),
+          "Кейс 9: срок в пределах 15")
+    check(not any("Существенность" in k.label
+                  for k in r9.missing_optional),
+          "Кейс 9: без предупреждения о существенности")
+
+    # ─── Кейс 10: return14 + техсложный — 15-дневка не активна ───
+    r10 = run_consumer_pre_checks(
+        {
+            "проблема": "купил смартфон, не понравился цвет",
+            "продавец": "М.Видео",
+            "адрес_продавца": "Москва",
+            "дата_покупки": long_ago,
+        },
+        scenario="return14",
+    )
+    check(not any("Срок с момента покупки" in k.label
+                  for k in r10.known),
+          "Кейс 10: return14 — 15-дневка не срабатывает (только defect)")
+
     print(f"\nTotal: {passed + failed}  Passed: {passed}  Failed: {failed}")
     raise SystemExit(1 if failed else 0)
 
