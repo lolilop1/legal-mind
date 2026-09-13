@@ -315,6 +315,34 @@ def main():
     check(not any("Подтип гарантийного случая" in k.label for k in r19.known),
           "Defect 19: подтип не для return14")
 
+    # ─── Ст. 19: гарантия истекла, но 2 года не прошли ───
+    r20 = run_consumer_pre_checks(
+        {
+            "проблема": "купил смартфон год назад, гарантия закончилась, сломался",
+            "продавец": "ООО «М.Видео»",
+            "адрес_продавца": "Москва",
+        },
+        scenario="defect",
+    )
+    check(any("Сроки предъявления" in k.label
+              and "ст. 19" in (k.label or "")
+              for k in r20.known),
+          "Defect 20: гарантия истекла -> ст. 19 в known")
+    check(any("Доказательство недостатка" in k.label
+              for k in r20.missing_optional),
+          "Defect 20: предупреждение про экспертизу")
+
+    r21 = run_consumer_pre_checks(
+        {
+            "проблема": "купил вчера, не работает",
+            "продавец": "ООО «М.Видео»",
+            "адрес_продавца": "Москва",
+        },
+        scenario="defect",
+    )
+    check(not any("Сроки предъявления" in k.label for k in r21.known),
+          "Defect 21: гарантия действует -> нет ст. 19")
+
     print(f"\nTotal: {passed + failed}  Passed: {passed}  Failed: {failed}")
     raise SystemExit(1 if failed else 0)
 
