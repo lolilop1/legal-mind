@@ -131,6 +131,21 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 6. После этого — любой git push автоматически деплоит.
 
+## Smoke-тест (локальный прогон 6 сценариев)
+
+Одна команда — поднимает Flask на 127.0.0.1:5001 (отдельная БД, прод
+не трогает), прогоняет 6 реалистичных кейсов (UK, шум, 4 consumer-
+сценария), сохраняет PDF и открывает их разом:
+
+    python scripts\smoke_test.py
+
+Результат:
+- `smoke_output/01_uk_uborka.pdf` … `06_consumer_service_deadline.pdf`
+- `smoke_output/flask.log` — если что-то упало
+- `smoke_output/smoke_cases.db` — изолированная БД
+
+Занимает ~1-2 минуты (6 LLM-запросов к Alice AI Flash).
+
 ## Полезные команды
 
 Логи приложения:

@@ -1,4 +1,4 @@
-﻿# ─── Секреты и ключи ───
+# ─── Секреты и ключи ───
 .env
 *.env
 !.env.example
@@ -55,6 +55,9 @@ _archive/
 reorganize.ps1
 reorganize2.ps1
 "Текстовый документ.txt"
+# ─── Smoke-тест (локальный) ───
+smoke_output/
+
 # Контекст для чатов
 _CONTEXT_FULL.md
 
