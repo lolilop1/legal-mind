@@ -68,6 +68,33 @@
     </table>
   </div>
 
+  {% if case.calculation %}
+  <div class="case-section">
+    <h2>Расчёт неустойки</h2>
+    <table class="case-table">
+      <tr>
+        <td>Основное требование</td>
+        <td><strong>{{ "%.2f"|format(case.calculation.base_amount) }} ₽</strong></td>
+      </tr>
+      <tr>
+        <td>Неустойка</td>
+        <td>
+          <strong>{{ "%.2f"|format(case.calculation.penalty) }} ₽</strong>
+          ({{ case.calculation.rate_percent }}% × {{ case.calculation.days_overdue }} дн.)
+        </td>
+      </tr>
+      <tr>
+        <td>Итого</td>
+        <td><strong>{{ "%.2f"|format(case.calculation.total) }} ₽</strong></td>
+      </tr>
+      <tr>
+        <td>Основание</td>
+        <td>{{ case.calculation.law }}</td>
+      </tr>
+    </table>
+  </div>
+  {% endif %}
+
   {% if case.trace and case.trace.norms %}
   <div class="case-section">
     <h2>Как система пришла к норме</h2>

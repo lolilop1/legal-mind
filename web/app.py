@@ -460,6 +460,20 @@ def process_consumer_module(user_data: dict, scenario: str) -> dict:
         }
     result = process_consumer(user_data, scenario)
     result["scenario"] = scenario
+
+    # Подтип для калькулятора
+    _calc_subtype = None
+    if scenario == "marketplace":
+        from modules.consumer.pre_checks import _detect_marketplace_subtype
+        _sub = _detect_marketplace_subtype(user_data.get("проблема", ""))
+        if _sub and _sub[0] == "Просрочка доставки":
+            _calc_subtype = "delivery_delay"
+    elif scenario == "defect":
+        from modules.consumer.pre_checks import _detect_defect_subtype
+        _sub = _detect_defect_subtype(user_data.get("проблема", ""))
+        if _sub and _sub[0] == "Просрочка ремонта (>45 дней)":
+            _calc_subtype = "repair_delay"
+    result["calc_subtype"] = _calc_subtype
     return result
 
 
@@ -533,6 +547,25 @@ def _build_dna(problem_type: str, user_data: dict, result: dict, precheck=None) 
         "confidence": precheck.to_dict() if precheck else None,
         "trace": _build_trace_dict(problem_type, user_data, result),
     }
+
+    # Расчёт неустойки (для consumer) — сохраняем в DNA для карточки
+    if problem_type == "consumer":
+        try:
+            from modules.consumer.calculators import build_calculation as _bc
+            _calc = _bc(
+                result.get("scenario") or "",
+                user_data,
+                subtype=result.get("calc_subtype"),
+            )
+            if _calc:
+                # dates — сериализуем в строку, чтобы JSON-сериализовалось
+                _calc_ser = dict(_calc)
+                dd = _calc_ser.get("deadline_date")
+                if dd is not None and hasattr(dd, "isoformat"):
+                    _calc_ser["deadline_date"] = dd.isoformat()
+                dna["расчёт"] = _calc_ser
+        except Exception as e:
+            log.warning("Не удалось сохранить расчёт в DNA: %s", e)
 
     if problem_type == "uk":
         dna["subject"] = "собственник/жилец"
@@ -744,20 +777,10 @@ def submit():
         }
         extra_log = ""
     elif problem_type == "consumer":
-        # Определяем подтип для калькулятора (пока только marketplace/delivery)
-        _calc_subtype = None
-        if consumer_scenario == "marketplace":
-            from modules.consumer.pre_checks import _detect_marketplace_subtype
-            _sub = _detect_marketplace_subtype(user_data.get("проблема", ""))
-            if _sub and _sub[0] == "Просрочка доставки":
-                _calc_subtype = "delivery_delay"
-        elif consumer_scenario == "defect":
-            from modules.consumer.pre_checks import _detect_defect_subtype
-            _sub = _detect_defect_subtype(user_data.get("проблема", ""))
-            if _sub and _sub[0] == "Просрочка ремонта (>45 дней)":
-                _calc_subtype = "repair_delay"
         calc = build_consumer_calc(
-            consumer_scenario, user_data, subtype=_calc_subtype,
+            consumer_scenario,
+            user_data,
+            subtype=result.get("calc_subtype"),
         )
         normalized = {
             "описание_проблемы_формальное": parsed["описание_проблемы_формальное"],

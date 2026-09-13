@@ -53,6 +53,17 @@ def init_db() -> None:
         conn.executescript(f.read())
     conn.commit()
 
+    # Миграции: добавляем колонки, которых нет в старой БД
+    cur = conn.execute("PRAGMA table_info(cases)")
+    cols = {row[1] for row in cur.fetchall()}
+    if "calculation" not in cols:
+        try:
+            conn.execute("ALTER TABLE cases ADD COLUMN calculation TEXT")
+            conn.commit()
+            log.info("Миграция: добавлена колонка calculation в cases")
+        except sqlite3.OperationalError as e:
+            log.warning("Не удалось добавить calculation: %s", e)
+
     try:
         os.chmod(DB_PATH, stat.S_IRUSR | stat.S_IWUSR)
     except OSError as e:
@@ -109,10 +120,10 @@ def create_case(
                     case_number, case_uuid, created_at, updated_at,
                     problem_type, subject, object, event, dates, amount,
                     counterparty, jurisdiction, demand,
-                    evidence, confidence, trace,
+                    evidence, confidence, trace, calculation,
                     engine_version, rules_version, template_version,
                     source_text, user_data
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     case_number, case_uuid, now, now,
@@ -128,6 +139,7 @@ def create_case(
                     j(dna.get("evidence")),
                     j(dna.get("confidence")),
                     j(dna.get("trace")),
+                    j(dna.get("расчёт")),
                     engine_version or None,
                     rules_version or None,
                     template_version or None,
@@ -169,7 +181,7 @@ def get_case(case_number: str, case_uuid: str) -> dict | None:
         return None
 
     case = dict(row)
-    for field in ("dates", "evidence", "confidence", "trace", "user_data"):
+    for field in ("dates", "evidence", "confidence", "trace", "user_data", "calculation"):
         if case.get(field):
             try:
                 case[field] = json.loads(case[field])

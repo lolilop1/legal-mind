@@ -413,6 +413,43 @@ def main():
     check(any("Нарушен срок" in (k.value or "") for k in r_srok.known),
           "Service спец: обещали+делают -> нарушен срок")
 
+    # ─── Ст. 10 (право на информацию) и ст. 12 (недостоверная) ───
+    r30 = run_consumer_pre_checks(
+        {
+            "проблема": "продавец не сообщил, что товар невозвратный",
+            "продавец": "ООО «Тест»",
+            "адрес_продавца": "Москва",
+        },
+        scenario="defect",
+    )
+    check(any("Ст. 10" in k.label or "ст. 10" in (k.label or "")
+              for k in r30.known),
+          "Ст. 10: право на информацию")
+
+    r31 = run_consumer_pre_checks(
+        {
+            "проблема": "на сайте было написано 256 ГБ, а пришло 128 ГБ",
+            "продавец": "ООО «Тест»",
+            "адрес_продавца": "Москва",
+        },
+        scenario="defect",
+    )
+    check(any("Ст. 12" in k.label or "ст. 12" in (k.label or "")
+              for k in r31.known),
+          "Ст. 12: недостоверная информация")
+
+    r32 = run_consumer_pre_checks(
+        {
+            "проблема": "продавец ввёл в заблуждение о свойствах товара",
+            "продавец": "ООО «Тест»",
+            "адрес_продавца": "Москва",
+        },
+        scenario="defect",
+    )
+    check(any("Ст. 12" in k.label or "ст. 12" in (k.label or "")
+              for k in r32.known),
+          "Ст. 12: ввёл в заблуждение")
+
     print(f"\nTotal: {passed + failed}  Passed: {passed}  Failed: {failed}")
     raise SystemExit(1 if failed else 0)
 

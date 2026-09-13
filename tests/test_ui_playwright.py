@@ -206,6 +206,29 @@ def main():
         check(err_style is not None and "rgb(211, 47, 47)" in err_style["color"],
               f"UI: .lm-field-error красный (got: {err_style})")
 
+        # ═══ 8б. Поля 'Текущая цена' и 'Номер заказа' ═══
+        page.goto(_BASE, wait_until="networkidle")
+        page.select_option("select[name='problem_type']", "consumer")
+        time.sleep(0.2)
+        page.fill("textarea[name='проблема']",
+                  "купил смартфон, сломался, хочу вернуть деньги")
+        page.click("button.wizard-next")
+        time.sleep(0.3)
+
+        # Текущая цена — в consumer-блоке
+        check(page.locator("input[name='текущая_цена']").count() == 1,
+              "UI: поле 'Текущая цена' в форме")
+        # Номер заказа скрыт (не маркетплейс)
+        check(page.locator("#order-number-field").is_hidden(),
+              "UI: 'Номер заказа' скрыт (не маркетплейс)")
+
+        # Меняем на Ozon → номер заказа виден
+        page.fill("input[name='продавец']", "Ozon")
+        page.dispatch_event("input[name='продавец']", "input")
+        time.sleep(0.3)
+        check(page.locator("#order-number-field").is_visible(),
+              "UI: Ozon -> 'Номер заказа' показан")
+
         # ═══ 9. Стили CSS загрузились ═══
         css_ok = page.evaluate('''() => {
             const s = document.querySelector('.container');

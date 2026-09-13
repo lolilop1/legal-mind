@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS cases (
     evidence        TEXT,                      -- JSON: список доказательств
     confidence      TEXT,                      -- JSON: {known: [...], unknown: [...]}
     trace           TEXT,                      -- JSON: цепочка норма→источник
+    calculation     TEXT,                      -- JSON: расчёт неустойки (consumer)
 
     -- Версии (snapshot на момент генерации)
     engine_version  TEXT,                      -- uk-01 / noise-01 / consumer-defect-01
