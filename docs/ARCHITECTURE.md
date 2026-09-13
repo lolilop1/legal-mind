@@ -205,6 +205,24 @@ Push → GitHub Actions → 644 теста на Python 3.12 + chromium (Playwrig
 - 6 сценариев против прода, артефакты (6 PDF) сохраняются 30 дней
 - Email при падении
 
+## UI-структура
+
+- **Главная `/`** — hero + 3 карточки выбора типа проблемы
+  (радио-кнопки внутри `.type-card` label) + wizard 3 шага
+- **Шаг 1** — выбор типа (карточки) + textarea «Опишите проблему»
+- **Шаг 2** — 4 секции `.form-section`:
+  📍 Ваш адрес / 🏢 Продавец / 🛍️ Товар / 📅 Дата обращения
+- **Шаг 3** — ФИО + телефон + чекбокс 152-ФЗ
+- **Карточка дела `/case/...`** — знаем / расчёт / версия /
+  документы / исходное описание
+- **Скриншоты** — `scripts/make_screenshots.py` (7 PNG,
+  desktop + mobile, Playwright headless)
+
+Статика:
+- `style.css` — `.hero`, `.type-card`, `.form-section`, `.lm-field-error`,
+  `.privacy-consent`, кастомная тема Air Datepicker
+- Air Datepicker — 2 календаря через `initPicker()` (общий locale)
+
 ## Что НЕ делаем архитектурно
 
 - Не храним ПД без HTTPS

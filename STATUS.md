@@ -106,6 +106,16 @@ GitHub репо lolilop1/legal-mind. Deploy Key. deploy.yml через workflow_
 Осталось: шифрование `cases.db` at rest (отдельная сессия),
 HTTPS (ждёт домена).
 
+### UI (14.09.2026)
+- Hero-секция с градиентом, 3 галочки преимуществ
+- 3 карточки выбора типа проблемы (🏠 🔊 🛒) вместо dropdown
+- Шаг 2 формы разбит на 4 секции (адрес / продавец / товар / дата)
+- Цена + текущая цена — в 2 колонки
+- Air Datepicker пофикшен (не вылетает за карточку)
+- Playwright UI-тесты (22 проверки), 7 скриншотов через
+  `scripts/make_screenshots.py`
+- `.lm-field-error`, `.type-card`, `.form-section` в style.css
+
 ### Документация
 README, STATUS, ROADMAP, docs/ARCHITECTURE, DECISIONS, MODULES, CHANGELOG, SETUP, web/README — все синхронизированы с кодом.
 

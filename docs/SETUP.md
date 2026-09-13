@@ -141,6 +141,17 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 6. После этого — любой git push автоматически деплоит.
 
+## Скриншоты UI
+
+Генерация 7 PNG ключевых экранов (desktop + mobile):
+
+    python scripts\make_screenshots.py
+
+Результат: `tests/screenshots/*.png`. Папка в `.gitignore`,
+файлы остаются локально. Открыть: `explorer tests\screenshots`.
+
+Полезно после правок CSS/HTML — глянуть глазами что не поехало.
+
 ## UI-тесты (Playwright)
 
 Проверяют wizard, календари, показ/скрытие полей, inline-ошибки
