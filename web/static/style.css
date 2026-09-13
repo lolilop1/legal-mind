@@ -1065,3 +1065,13 @@ textarea::placeholder {
     --adp-cell-size: 44px;
   }
 }
+
+/* ─── Inline-ошибки под полями формы ─── */
+.lm-field-error {
+  display: block;
+  color: #d32f2f;
+  font-size: 13px;
+  line-height: 1.4;
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
