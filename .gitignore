@@ -66,3 +66,7 @@ _CONTEXT_FULL.md
 test_consumer_output/
 make_context.ps1
 
+
+# Бэкап-ключи
+.env.backup
+
