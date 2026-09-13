@@ -545,43 +545,48 @@ window.lmOnTypeChange = function(val) {
 <script src="/static/airdatepicker/air-datepicker.min.js"></script>
 <script>
 (function() {
-  var el = document.getElementById('date-purchase');
-  if (!el || typeof AirDatepicker === 'undefined') return;
+  if (typeof AirDatepicker === 'undefined') return;
+
+  var LOCALE = {
+    days: ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'],
+    daysShort: ['Вос','Пон','Втр','Срд','Чтв','Птн','Сбт'],
+    daysMin: ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],
+    months: ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+    monthsShort: ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'],
+    today: 'Сегодня',
+    clear: 'Очистить',
+    dateFormat: 'dd.MM.yyyy',
+    timeFormat: 'HH:mm',
+    firstDay: 1
+  };
 
   var today = new Date();
   var maxDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   var minDate = new Date(2000, 0, 1);
 
-  new AirDatepicker(el, {
-    locale: {
-      days: ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'],
-      daysShort: ['Вос','Пон','Втр','Срд','Чтв','Птн','Сбт'],
-      daysMin: ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],
-      months: ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
-      monthsShort: ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'],
-      today: 'Сегодня',
-      clear: 'Очистить',
+  function initPicker(el, withToday) {
+    if (!el) return;
+    var opts = {
+      locale: LOCALE,
       dateFormat: 'dd.MM.yyyy',
-      timeFormat: 'HH:mm',
-      firstDay: 1
-    },
-    dateFormat: 'dd.MM.yyyy',
-    minDate: minDate,
-    maxDate: maxDate,
-    selectedDates: [today],
-    position: 'bottom left',
-    autoClose: true,
-    isMobile: (window.innerWidth < 480),
-    buttons: ['today', 'clear'],
-    navTitles: {
-      days: 'MMMM <i>yyyy</i>',
-      months: 'yyyy',
-      years: 'yyyy1 - yyyy2'
-    },
-    onSelect: function() {
-      // автоформат — уже dd.MM.yyyy
-    }
-  });
+      minDate: minDate,
+      maxDate: maxDate,
+      position: 'bottom left',
+      autoClose: true,
+      isMobile: (window.innerWidth < 480),
+      buttons: ['today', 'clear'],
+      navTitles: {
+        days: 'MMMM <i>yyyy</i>',
+        months: 'yyyy',
+        years: 'yyyy1 - yyyy2'
+      }
+    };
+    if (withToday) opts.selectedDates = [today];
+    new AirDatepicker(el, opts);
+  }
+
+  initPicker(document.getElementById('date-purchase'), true);
+  initPicker(document.getElementById('date-demand'), false);
 })();
 </script>
 
