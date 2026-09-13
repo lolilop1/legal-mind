@@ -111,13 +111,29 @@ def main():
     check(any("Дата" in k.label for k in r6.missing_optional),
           "Кейс 6: дата в optional")
 
-    # ─── Кейс 7: marketplace ───
+    # ─── Кейс 7: marketplace (с номером заказа — не блокируется) ───
     r7 = run_consumer_pre_checks({
         "проблема": "заказал на Ozon кроссовки, не подошёл размер",
         "продавец": "Ozon",
         "адрес_продавца": "Москва",
+        "номер_заказа": "12345678-1234",
     })
-    check(not r7.is_blocked, "Кейс 7: marketplace не блокируется")
+    check(not r7.is_blocked, "Кейс 7: marketplace с номером заказа — ок")
+    check(any("Ответчик" in k.label and "Ozon" in (k.value or "")
+              for k in r7.known),
+          "Кейс 7: ответчик = Ozon (владелец агрегатора)")
+    check(any("Номер заказа" in k.label for k in r7.known),
+          "Кейс 7: номер заказа в known")
+
+    # ─── Кейс 7б: marketplace без номера заказа — блокируется ───
+    r7b = run_consumer_pre_checks({
+        "проблема": "заказал на Ozon кроссовки, не подошёл размер",
+        "продавец": "Ozon",
+        "адрес_продавца": "Москва",
+    })
+    check(r7b.is_blocked, "Кейс 7б: marketplace без номера заказа — блок")
+    check(any("Номер заказа" in c.label for c in r7b.missing_critical),
+          "Кейс 7б: critical = Номер заказа")
 
     # ─── Кейс 8: defect + техсложный + >15 дней ───
     import datetime as _dt

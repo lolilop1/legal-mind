@@ -132,6 +132,28 @@ def is_marketplace(seller: str) -> bool:
     return resolve_marketplace(seller) is not None
 
 
+# Подсказки по формату номера заказа для каждой платформы
+_ORDER_HINTS: dict[str, str] = {
+    "ozon": "Например: 12345678-1234 (в письме/в личном кабинете Ozon)",
+    "wildberries": "Например: 12345678 (в приложении WB)",
+    "yandex_market": "Номер заказа из Яндекс.Маркет",
+    "avito": "ID объявления или «нет» (если покупка с рук)",
+    "lamoda": "Номер заказа Lamoda",
+    "yandex_eda": "Номер заказа Яндекс Еды",
+    "yandex_go": "Номер поездки",
+    "yandex_travel": "Номер брони",
+    "delivery_club": "Номер заказа Delivery Club",
+    "magnit_market": "Номер заказа Магнит Маркет",
+    "kuper": "Номер заказа Купер",
+    "joom": "Номер заказа Joom",
+}
+
+
+def get_order_hint(mp_key: str) -> str:
+    """Placeholder для поля «номер заказа» по платформе."""
+    return _ORDER_HINTS.get(mp_key, "Номер заказа с маркетплейса")
+
+
 def all_aliases() -> tuple[str, ...]:
     """Плоский список всех алиасов — для hardchecks."""
     return tuple(

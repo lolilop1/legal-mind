@@ -223,10 +223,13 @@ def generate_pdf(output_path: str, requisites: dict, normalized: dict,
 
     # ─── Header: Директору + адрес продавца + блок потребителя ───
     _link_line = f"Профиль: {seller_link}\n" if seller_link else ""
+    _order = (requisites.get("номер_заказа") or "").strip()
+    _order_line = f"Номер заказа: {_order}\n" if _order else ""
     header_text = (
         f"{_format_addressee(seller)}\n"
         f"Адрес: {seller_address}\n"
         f"{_link_line}"
+        f"{_order_line}"
         f"\n"
         f"от гр. {requisites['фио']}\n"
         f"{F_PROZHIV} по адресу:\n"

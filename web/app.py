@@ -42,6 +42,7 @@ from modules.consumer.pre_checks import run_consumer_pre_checks
 from modules.consumer.pdf import generate_pdf as pdf_consumer
 from modules.consumer.hardchecks import hard_pre_check as hardcheck_consumer, _is_legal_entity
 from modules.consumer import configs as consumer_configs
+from modules.consumer.marketplaces import resolve_marketplace
 
 from core.trace import build_trace
 
@@ -171,7 +172,7 @@ def _save_form_to_session(form) -> None:
     """Сохраняет данные формы, чтобы показать их после возврата."""
     try:
         session[_SESSION_FORM_KEY] = {
-            "problem_type":    form.get("problem_type", "uk"),
+            "problem_type":     form.get("problem_type", "uk"),
             "проблема":         form.get("проблема", ""),
             "адрес":            form.get("адрес", ""),
             "дата_начала":      form.get("дата_начала", ""),
@@ -179,6 +180,12 @@ def _save_form_to_session(form) -> None:
             "фио":              form.get("фио", ""),
             "телефон":          form.get("телефон", ""),
             "organization":     form.get("organization", ""),
+            # Consumer
+            "продавец":         form.get("продавец", ""),
+            "адрес_продавца":   form.get("адрес_продавца", ""),
+            "ссылка_продавца":  form.get("ссылка_продавца", ""),
+            "дата_покупки":     form.get("дата_покупки", ""),
+            "номер_заказа":     form.get("номер_заказа", ""),
         }
     except Exception as e:
         log.warning("Не удалось сохранить форму в session: %s", e)
@@ -587,6 +594,12 @@ def submit():
         user_data["адрес_продавца"] = request.form.get("адрес_продавца", "").strip()
         user_data["ссылка_продавца"] = request.form.get("ссылка_продавца", "").strip()
         user_data["дата_покупки"] = request.form.get("дата_покупки", "").strip()
+        user_data["номер_заказа"] = request.form.get("номер_заказа", "").strip()
+
+        # Маркетплейс: автоподстановка юрадреса из справочника
+        _mp = resolve_marketplace(user_data["продавец"])
+        if _mp and not user_data["адрес_продавца"]:
+            user_data["адрес_продавца"] = _mp.get("address") or ""
 
 # ─── Собираем ВСЕ ошибки валидации сразу ───
     errors = []
@@ -600,9 +613,19 @@ def submit():
         _seller = request.form.get("продавец", "").strip()
         _seller_addr = request.form.get("адрес_продавца", "").strip()
         _seller_link = request.form.get("ссылка_продавца", "").strip()
+        _order = request.form.get("номер_заказа", "").strip()
+        _mp = resolve_marketplace(_seller) if _seller else None
 
         if not _seller:
             errors.append("Заполните поле «Продавец / исполнитель»")
+        elif _mp:
+            # Маркетплейс: адрес знаем из справочника, номер заказа обязателен
+            if not _order:
+                errors.append(
+                    f"Для претензии на маркетплейс {_mp['brand']} нужен "
+                    "номер заказа — он есть в личном кабинете или в письме "
+                    "о подтверждении."
+                )
         elif _is_legal_entity(_seller):
             if not _seller_addr:
                 errors.append(
@@ -656,6 +679,7 @@ def submit():
         requisites["продавец"] = user_data.get("продавец") or "Продавец"
         requisites["адрес_продавца"] = user_data.get("адрес_продавца") or ""
         requisites["ссылка_продавца"] = user_data.get("ссылка_продавца") or ""
+        requisites["номер_заказа"] = user_data.get("номер_заказа") or ""
         _fio_raw = request.form.get("фио", "").strip()
         requisites["пол"] = detect_gender(_fio_raw) or "masc"
         result = process_consumer_module(user_data, consumer_scenario)

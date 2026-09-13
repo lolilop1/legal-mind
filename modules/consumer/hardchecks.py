@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from typing import Optional
 
-from modules.consumer.marketplaces import MARKETPLACES
+from modules.consumer.marketplaces import MARKETPLACES, resolve_marketplace
 
 
 _ALPHABET_RE = re.compile(r"[A-Za-zА-Яа-яЁё]")
@@ -121,25 +121,39 @@ def hard_pre_check(user_data: dict, scenario: str | None = None) -> Optional[dic
             "или маркетплейса.",
         )
 
-    # 7. Адрес продавца — обязателен для юрлиц / ИП / самозанятых.
+    # 7. Маркетплейс: адрес знаем из справочника, требуем номер заказа.
+    mp = resolve_marketplace(seller)
     seller_address = (user_data.get("адрес_продавца") or "").strip()
     seller_link = (user_data.get("ссылка_продавца") or "").strip()
 
-    if not seller_address and _is_legal_entity(seller):
-        return _stop(
-            "Не указан адрес продавца. Для организации или ИП его можно "
-            "найти в ЕГРЮЛ/ЕГРИП, в чеке или на сайте. Без адреса претензию "
-            "некуда отправить.",
-        )
+    if mp:
+        # Адрес подставится автоматически из справочника в app.py
+        order = (user_data.get("номер_заказа") or "").strip()
+        if not order:
+            return _stop(
+                f"Для претензии на маркетплейс {mp['brand']} нужен номер "
+                "заказа — без него владелец агрегатора не идентифицирует "
+                "сделку. Номер есть в личном кабинете или в письме "
+                "о подтверждении заказа. Если номер неизвестен — "
+                "укажите «не указан».",
+            )
+    else:
+        # 7b. Обычные юрлица / ИП / самозанятые — адрес обязателен.
+        if not seller_address and _is_legal_entity(seller):
+            return _stop(
+                "Не указан адрес продавца. Для организации или ИП его можно "
+                "найти в ЕГРЮЛ/ЕГРИП, в чеке или на сайте. Без адреса "
+                "претензию некуда отправить.",
+            )
 
-    # Физлицо: без адреса и без ссылки — претензия бессмысленна.
-    if not seller_address and not seller_link:
-        return _stop(
-            "Для продавца-физлица нужен хотя бы один идентификатор: "
-            "либо адрес, либо ссылка на профиль/объявление (Авито, "
-            "Telegram, ВК). Без этого претензию некуда отправить, "
-            "а в суде невозможно идентифицировать ответчика.",
-        )
+        # 7c. Физлицо: без адреса и без ссылки — претензия бессмысленна.
+        if not seller_address and not seller_link:
+            return _stop(
+                "Для продавца-физлица нужен хотя бы один идентификатор: "
+                "либо адрес, либо ссылка на профиль/объявление (Авито, "
+                "Telegram, ВК). Без этого претензию некуда отправить, "
+                "а в суде невозможно идентифицировать ответчика.",
+            )
 
     # ─── Невозвратные товары (Пост. 2463) — только для return14 ───
     if scenario == "return14":

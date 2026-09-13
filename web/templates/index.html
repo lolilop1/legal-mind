@@ -106,6 +106,11 @@
           <input type="text" name="ссылка_продавца" placeholder="Ссылка на ПРОФИЛЬ продавца (не на товар): https://www.avito.ru/user/... или @nickname" value="{{ form_data.get('ссылка_продавца', '') if form_data else '' }}">
         </div>
 
+        <div id="order-number-field" style="display: none;">
+          <label>Номер заказа <span style="color:#d32f2f;">*</span></label>
+          <input type="text" name="номер_заказа" id="order-number-input" placeholder="Номер заказа с маркетплейса" value="{{ form_data.get('номер_заказа', '') if form_data else '' }}">
+        </div>
+
         <label>Дата покупки</label>
         <input type="text" name="дата_покупки" id="date-purchase" placeholder="10.09.2026" value="{{ form_data.get('дата_покупки', '') if form_data else '' }}">
       </div>
@@ -243,6 +248,14 @@ window.lmOnTypeChange = function(val) {
 
         if (!sellerVal) {
           fail(seller, 'Укажите продавца или исполнителя');
+        } else if (lmIsMarketplace(sellerVal)) {
+          // Маркетплейс: адрес из справочника, обязателен номер заказа
+          var orderInput2 = document.getElementById('order-number-input');
+          var orderVal = orderInput2 ? orderInput2.value.trim() : '';
+          if (!orderVal) {
+            fail(orderInput2,
+                 'Для претензии на маркетплейс нужен номер заказа — он есть в личном кабинете или в письме о подтверждении');
+          }
         } else if (lmIsLegalEntity(sellerVal)) {
           if (!addrVal) {
             fail(sellerAddr, 'Для ООО/ИП адрес обязателен — он есть в ЕГРЮЛ/ЕГРИП, чеке или на сайте');
@@ -450,16 +463,65 @@ window.lmOnTypeChange = function(val) {
     return false;
   }
 
+  var orderField = document.getElementById('order-number-field');
+  var orderInput = document.getElementById('order-number-input');
+  var ORDER_HINTS = {
+    'ozon': 'Например: 12345678-1234 (в письме/в личном кабинете Ozon)',
+    'озон': 'Например: 12345678-1234 (в письме/в личном кабинете Ozon)',
+    'wildberries': 'Например: 12345678 (в приложении WB)',
+    'вайлдберриз': 'Например: 12345678 (в приложении WB)',
+    'lamoda': 'Номер заказа Lamoda',
+    'ламода': 'Номер заказа Lamoda',
+    'avito': 'ID объявления или «нет» (если покупка с рук)',
+    'авито': 'ID объявления или «нет» (если покупка с рук)',
+    'яндекс маркет': 'Номер заказа из Яндекс.Маркет',
+    'yandex market': 'Номер заказа из Яндекс.Маркет',
+    'купер': 'Номер заказа Купер',
+    'kuper': 'Номер заказа Купер',
+    'сбермаркет': 'Номер заказа Купер (бывший СберМаркет)',
+    'магнит маркет': 'Номер заказа Магнит Маркет',
+    'joom': 'Номер заказа Joom'
+  };
+
+  function lmIsMarketplace(s) {
+    if (!s) return false;
+    var lower = s.toLowerCase();
+    for (var k in ORDER_HINTS) {
+      if (lower.indexOf(k) >= 0) return true;
+    }
+    return false;
+  }
+
+  function lmOrderHint(s) {
+    if (!s) return 'Номер заказа с маркетплейса';
+    var lower = s.toLowerCase();
+    for (var k in ORDER_HINTS) {
+      if (lower.indexOf(k) >= 0) return ORDER_HINTS[k];
+    }
+    return 'Номер заказа с маркетплейса';
+  }
+
   function lmUpdateSellerFields() {
     if (!sellerInput || !sellerLinkField || !sellerAddressInput) return;
     var val = (sellerInput.value || '').trim();
     var isLegal = lmIsLegalEntity(val);
+    var isMP = lmIsMarketplace(val);
 
-    // Показ ссылки — только для физлиц (ИП / ООО скрываем)
-    sellerLinkField.style.display = isLegal ? 'none' : 'block';
+    // Ссылка — только для физлиц (не юрлиц, не маркетплейсов)
+    sellerLinkField.style.display = (isLegal || isMP) ? 'none' : 'block';
+
+    // Поле номера заказа — только для маркетплейсов
+    if (orderField) {
+      orderField.style.display = isMP ? 'block' : 'none';
+      if (isMP && orderInput) {
+        orderInput.placeholder = lmOrderHint(val);
+      }
+    }
 
     // Placeholder адреса продавца
-    if (isLegal) {
+    if (isMP) {
+      sellerAddressInput.placeholder = 'Адрес подставится из справочника автоматически';
+    } else if (isLegal) {
       sellerAddressInput.placeholder = 'Для ООО/ИП обязателен — есть в ЕГРЮЛ/ЕГРИП, чеке или на сайте';
     } else {
       sellerAddressInput.placeholder = 'Можно оставить пустым — если знаете, укажите';

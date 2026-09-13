@@ -7,6 +7,7 @@ from modules.consumer.marketplaces import (
     resolve_marketplace,
     is_marketplace,
     all_aliases,
+    get_order_hint,
 )
 
 
@@ -85,6 +86,41 @@ def main():
                 dupes.append(f"{alias} ({seen[alias]} vs {key})")
             seen[alias] = key
     check(not dupes, f"алиасы уникальны (дубли: {dupes})")
+
+    # ─── get_order_hint ───
+    check("Ozon" in get_order_hint("ozon") or "12345678" in get_order_hint("ozon"),
+          "hint: ozon подсказка осмысленная")
+    check(bool(get_order_hint("wildberries")), "hint: wb непустой")
+    check("Lamoda" in get_order_hint("lamoda"), "hint: lamoda — про Lamoda")
+    check(get_order_hint("unknown_mp") == "Номер заказа с маркетплейса",
+          "hint: fallback для неизвестного")
+
+    # ─── hardchecks: marketplace без номера заказа → STOP ───
+    from modules.consumer.hardchecks import hard_pre_check
+    base = {
+        "продавец": "Ozon",
+        "адрес_продавца": "",
+        "проблема": "купил смартфон, сломался, хочу вернуть деньги",
+    }
+    r_no_order = hard_pre_check(base, scenario="defect")
+    check(r_no_order is not None and r_no_order.get("stop") is True,
+          "hardchecks: marketplace без номера заказа → STOP")
+
+    r_with_order = hard_pre_check(
+        dict(base, номер_заказа="12345678-1234"),
+        scenario="defect",
+    )
+    check(r_with_order is None,
+          "hardchecks: marketplace + номер заказа → OK")
+
+    # ─── обычное ООО по-прежнему требует адрес (не спутали) ───
+    r_ooo = hard_pre_check(
+        {"продавец": "ООО Ромашка", "адрес_продавца": "",
+         "проблема": "купил смартфон, сломался"},
+        scenario="defect",
+    )
+    check(r_ooo is not None and r_ooo.get("stop") is True,
+          "hardchecks: обычное ООО без адреса → STOP (не путаем с MP)")
 
     print(f"\nTotal: {passed + failed}  Passed: {passed}  Failed: {failed}")
     raise SystemExit(1 if failed else 0)

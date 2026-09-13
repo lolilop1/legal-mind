@@ -200,23 +200,37 @@ def run_consumer_pre_checks(user_data: dict, extras: dict | None = None,
     # Known
     add_known(report, "Тип проблемы", "Защита прав потребителя")
 
-    if seller:
-        mp_data = resolve_marketplace(seller)
-        if mp_data:
-            add_known(
-                report,
-                "Ответчик",
-                f"{mp_data['brand']} — владелец агрегатора, "
-                f"{mp_data['entity']}",
-            )
-        else:
-            add_known(report, "Продавец / исполнитель", seller)
-    else:
+    mp_data = resolve_marketplace(seller) if seller else None
+
+    if not seller:
         add_missing_critical(
             report,
             "Продавец / исполнитель",
             "Не указано название магазина, компании или маркетплейса.",
         )
+    elif mp_data:
+        add_known(
+            report,
+            "Ответчик",
+            f"{mp_data['brand']} — владелец агрегатора, "
+            f"{mp_data['entity']}",
+        )
+    else:
+        add_known(report, "Продавец / исполнитель", seller)
+
+    # ─── Номер заказа для маркетплейса ───
+    if mp_data:
+        order = (user_data.get("номер_заказа") or "").strip()
+        if order:
+            add_known(report, "Номер заказа", order)
+        else:
+            add_missing_critical(
+                report,
+                "Номер заказа",
+                f"Для претензии на маркетплейс {mp_data['brand']} "
+                "номер заказа обязателен — без него агрегатор не "
+                "идентифицирует сделку.",
+            )
 
     seller_address = (user_data.get("адрес_продавца") or "").strip()
     seller_link = (user_data.get("ссылка_продавца") or "").strip()
