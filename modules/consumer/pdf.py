@@ -358,6 +358,14 @@ def generate_pdf(output_path: str, requisites: dict, normalized: dict,
         total_fmt = _fmt_rub(calc["total"])
 
         _mc(pdf, 5.5, f"    Сумма основного требования: {base_fmt} руб.", align="L")
+        if calc.get("price_bumped"):
+            orig_fmt = _fmt_rub(calc["original_price"])
+            _mc(
+                pdf, 5.5,
+                f"    (расчёт по цене на день предъявления — {base_fmt} руб. "
+                f"вместо {orig_fmt} руб. на день покупки, ст. 24 ЗоЗПП)",
+                align="L",
+            )
         _mc(
             pdf, 5.5,
             f"    Неустойка: {penalty_fmt} руб. "

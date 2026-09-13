@@ -190,6 +190,45 @@ def main():
     check(bc_rep["penalty"] == 29500.0, "build repair: penalty 29500")
     check("20" in bc_rep["law"], "build repair: law 20")
 
+    # ─── Ст. 24: расчёт по текущей цене (если товар подорожал) ───
+    bc_bump = build_calculation(
+        "defect",
+        {"цена": "30000", "текущая_цена": "40000",
+         "дата_обращения": "01.08.2026"},
+        today=today,
+    )
+    check(bc_bump is not None, "Ст. 24: подорожал — не None")
+    check(bc_bump["base_amount"] == 40000.0,
+          f"Ст. 24: base 40 000 (получено {bc_bump['base_amount']})")
+    check(bc_bump.get("price_bumped") is True, "Ст. 24: bumped=True")
+    check(bc_bump.get("original_price") == 30000.0,
+          "Ст. 24: original=30 000")
+    # today в файле = 2026-09-10, дедлайн = 11.08, просрочка 30 дн.
+    # 30 × 40000 × 1% = 12000
+    check(bc_bump["penalty"] == 12000.0,
+          f"Ст. 24: penalty 12 000 (получено {bc_bump['penalty']})")
+
+    # Без текущей цены
+    bc_plain = build_calculation(
+        "defect",
+        {"цена": "30000", "дата_обращения": "01.08.2026"},
+        today=today,
+    )
+    check(bc_plain.get("price_bumped") is None,
+          "Ст. 24: без текущей цены — нет bumped")
+
+    # Подешевел — берём цену покупки
+    bc_down = build_calculation(
+        "defect",
+        {"цена": "40000", "текущая_цена": "30000",
+         "дата_обращения": "01.08.2026"},
+        today=today,
+    )
+    check(bc_down["base_amount"] == 40000.0,
+          "Ст. 24: подешевел — base 40 000 (цена покупки)")
+    check(bc_down.get("price_bumped") is None,
+          "Ст. 24: подешевел — bumped нет")
+
     print(f"\nTotal: {passed + failed}  Passed: {passed}  Failed: {failed}")
     raise SystemExit(1 if failed else 0)
 

@@ -220,6 +220,14 @@ def build_calculation(
     amount = parse_amount(
         user_data.get("цена") or user_data.get("amount") or user_data.get("сумма")
     )
+    # Ст. 24 ЗоЗПП — при возврате товара ненадлежащего качества
+    # расчёт идёт по цене на день добровольного удовлетворения требования,
+    # а если оно не удовлетворено — по цене на день вынесения решения судом.
+    current_price = parse_amount(user_data.get("текущая_цена"))
+    price_bumped = False
+    if amount and current_price and current_price > amount:
+        amount = current_price
+        price_bumped = True
     demand_date = parse_date(
         user_data.get("дата_обращения") or user_data.get("дата_требования")
     )
@@ -231,7 +239,7 @@ def build_calculation(
     if not result.get("applicable"):
         return None
 
-    return {
+    out = {
         "base_amount": amount,
         "penalty": result["amount"],
         "total": round(amount + result["amount"], 2),
@@ -242,3 +250,9 @@ def build_calculation(
         "reason": result["reason"],
         "capped": result["capped"],
     }
+    if price_bumped:
+        out["price_bumped"] = True
+        out["original_price"] = parse_amount(
+            user_data.get("цена") or user_data.get("amount") or user_data.get("сумма")
+        )
+    return out

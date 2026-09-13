@@ -188,6 +188,7 @@ def _save_form_to_session(form) -> None:
             "дата_покупки":     form.get("дата_покупки", ""),
             "номер_заказа":     form.get("номер_заказа", ""),
             "цена":             form.get("цена", ""),
+            "текущая_цена":     form.get("текущая_цена", ""),
             "дата_обращения":   form.get("дата_обращения", ""),
         }
     except Exception as e:
@@ -599,6 +600,7 @@ def submit():
         user_data["дата_покупки"] = request.form.get("дата_покупки", "").strip()
         user_data["номер_заказа"] = request.form.get("номер_заказа", "").strip()
         user_data["цена"] = request.form.get("цена", "").strip()
+        user_data["текущая_цена"] = request.form.get("текущая_цена", "").strip()
         user_data["дата_обращения"] = request.form.get("дата_обращения", "").strip()
 
         # Маркетплейс: автоподстановка юрадреса из справочника
