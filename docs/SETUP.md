@@ -46,7 +46,7 @@ python -c "import secrets; print(secrets.token_hex(32))"
 6. Тесты:
    cd ..
    python tests\run_all.py
-   Ожидание: 15 файлов, 305 проверок, упало 0.
+   Ожидание: 23 файла, 644 проверки, упало 0.
 
 7. Запуск:
    cd web
@@ -144,6 +144,38 @@ python -c "import secrets; print(secrets.token_hex(32))"
     python tests\test_ui_playwright.py
 
 Если Playwright не установлен — тест делает SKIP (не fail).
+
+## Автоматические проверки (CI)
+
+На каждый `git push` GitHub Actions запускает:
+
+- **test.yml** — 644 теста + Playwright UI на чистой Ubuntu 24.04.
+  Если красное — на прод не уедет.
+- **deploy.yml** — срабатывает через `workflow_run` только после
+  успешного Tests.
+- **smoke.yml** — 6 сценариев против прода с реальным LLM,
+  по понедельникам 9:00 МСК + вручную из UI.
+
+Смотреть: https://github.com/lolilop1/legal-mind/actions
+
+## UI-тесты (Playwright, локально)
+
+Разово установить браузер:
+
+    python -m pip install playwright
+    python -m playwright install chromium
+
+Прогон:
+
+    python tests\test_ui_playwright.py
+
+Если Playwright не установлен — тест делает SKIP (не fail).
+
+## E2E-проверка контента PDF (pypdf)
+
+Бесплатно (LLM замокан), быстро (~3 сек), 39 проверок:
+
+    python tests\test_pdf_content.py
 
 ## Smoke-тест (локальный прогон 6 сценариев)
 

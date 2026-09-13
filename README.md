@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/lolilop1/legal-mind/actions/workflows/test.yml/badge.svg)](https://github.com/lolilop1/legal-mind/actions/workflows/test.yml)
 [![Deploy](https://github.com/lolilop1/legal-mind/actions/workflows/deploy.yml/badge.svg)](https://github.com/lolilop1/legal-mind/actions/workflows/deploy.yml)
+[![Smoke (prod)](https://github.com/lolilop1/legal-mind/actions/workflows/smoke.yml/badge.svg)](https://github.com/lolilop1/legal-mind/actions/workflows/smoke.yml)
 
 Веб-сервис для физических лиц. Превращает неформальное описание бытовой проблемы в готовый юридический документ (PDF).
 
@@ -15,70 +16,76 @@
 
 Уборка подъезда, отопление, лифт, снег, крыша, домофон.
 
-Нормы (федеральные): статья 161 ЖК РФ, Постановление № 491, Постановление № 170.
+Нормы: статья 161 ЖК РФ, Постановление № 491, Постановление № 170.
 
 ### Модуль 3 — Жалоба на шум
 
 Музыка, ремонт, крики, лай собаки, топот, вечеринки.
 
-Нормы: региональные (85 субъектов в region/data/noise_laws.db). Регион определяется гибридно: regex + embeddings.
+Нормы: региональные (85 субъектов в `region/data/noise_laws.db`). Регион — гибридно: regex + embeddings.
 
-### Confidence / UNKNOWN (этап 4)
+### Модуль 1 — Потребитель (4 сценария + расширения)
 
-Pre-checks показывают что система поняла и чего не хватает. Если критичное отсутствует — блокируем генерацию и показываем экран «Не хватает данных».
+Один движок, четыре конфига, авто-детект сценария по тексту.
 
-### Legal Trace (этап 5)
+| Сценарий | Ст. ЗоЗПП | Покрытие |
+|---|---|---|
+| Товар с браком (`defect`) | 18, 20, 21, 23 | + отказ в ремонте, + просрочка 45 дней |
+| Возврат 14 дней (`return14`) | 25 | + невозвратные (Пост. 2463), + техсложные (Пост. 924) |
+| Маркетплейс (`marketplace`) | 26.1, 23.1, 12, 18, 22 | + 12 площадок, номер заказа, автоадрес, просрочка доставки |
+| Услуга (`service`) | 27, 28, 29, 30, 31, 32, 33 | 4 подтипа: срок / смета / отказ / некачество |
 
-Цепочка «Факт → Квалификация → Норма → Источник». Показывается в карточке дела.
+**Дополнительно:**
+- **Калькулятор неустойки** — ст. 22, 23 (1%/день), ст. 23.1 (0.5%/день), ст. 28 (3%/день, cap), ст. 20/23 (ремонт >45 дней)
+- **Справочник 12 маркетплейсов** (реестр МЭР): Ozon, WB, Яндекс Маркет, Avito, Lamoda, Яндекс Еда/Go/Путешествия, Delivery Club, Магнит Маркет, Купер, Joom — авто-подстановка юрадреса
+- **Умная шапка PDF** — ООО/АО/ПАО → «Директору», ИП/самозанятый → как есть, физлицо → «Гражданину/Гражданке», маркетплейс → «Владельцу агрегатора»
 
-### Версионность (этап 6)
+### Сквозные фичи
 
-В PDF-подвале и карточке дела: движок, правила, шаблон.
-
-### CASE-хранилище (этап 3)
-
-Каждое заявление сохраняется в SQLite. Номер: LM-YYYYMMDD-NNNN, доступ по паре номер+UUID. Экран /my — список дел, /case/... — карточка.
-
-### Автодеплой (этап 8)
-
-git push → GitHub Actions → SSH на VPS → git pull → restart → health check.
+- **Confidence / UNKNOWN** (этап 4) — pre-checks показывают что знаем / чего нет
+- **Legal Trace** (этап 5) — цепочка «Факт → Квалификация → Норма → Источник»
+- **Версионность** (этап 6) — в PDF-подвале: движок, правила, шаблон
+- **CASE-хранилище** (этап 3) — SQLite, номер LM-YYYYMMDD-NNNN, экран `/my`, карточка `/case`
+- **Автодеплой** (этап 8) — `git push` → GitHub Actions → SSH → restart → health
 
 ## Архитектура
 
 Пользователь → nginx → Flask → валидация → hard-check → Alice AI Flash → entity check → pre-check → PDF → CASE.
 
-Принцип: если что-то можно проверить кодом — проверяем кодом.
+Принцип: **если что-то можно проверить кодом — проверяем кодом**.
 
 ## Стек
 
-Python 3.14, Flask, gunicorn, nginx, systemd, fpdf2, pymorphy3, Alice AI Flash, Yandex Text Embeddings, SQLite. Хостинг: Timeweb Cloud, IP 201.24.49.121.
+Python 3.12+, Flask, gunicorn, nginx, systemd, fpdf2, pypdf, pymorphy3, Alice AI Flash, Yandex Text Embeddings, SQLite. Хостинг: Timeweb Cloud, IP 201.24.49.121.
 
 ## Структура
 
-- core/ — общий код
-- region/ — определение региона
-- modules/ — uk, noise, consumer
-- web/ — Flask
-- scripts/ — разовые утилиты
-- tests/ — 17 файлов, 466 проверок
-- docs/ — документация
-- deploy/ — инфраструктура
+- `core/` — общий код
+- `region/` — определение региона
+- `modules/` — uk, noise, consumer
+- `web/` — Flask, шаблоны, статика
+- `scripts/` — утилиты + smoke-тест
+- `tests/` — 23 файла, 644 проверки
+- `docs/` — документация
+- `deploy/` — инфраструктура
 
-## Быстрый старт
+## Проверка после изменений
 
-Полная инструкция — docs/SETUP.md.
+**Автоматически (CI):**
+- GitHub Actions гоняет все **644 теста** на каждый push
+- Если тесты красные — на прод не уедет
+- **Smoke-тест** (6 сценариев с реальным LLM) — понедельники 9:00 МСК + вручную
+
+**Локально (когда хочешь):**
+
+    python tests\run_all.py               # 644 теста, ~30 сек
+    python tests\test_ui_playwright.py     # UI в headless Chromium
+    .\scripts\run_smoke.ps1               # 6 сценариев с реальным LLM
+    .\scripts\run_smoke.ps1 -Against prod # против прода
 
 ## Деплой
 
-git push — автодеплой за 30 секунд.
-
-## Управление на сервере
-
-ssh root@201.24.49.121, systemctl status legal-mind.
-
-## Roadmap
-
-См. ROADMAP.md. Ближайшее: домен legalmind.su + HTTPS.
+`git push` → автодеплой за 30-60 сек.
 
 ## Ссылки
 
@@ -86,21 +93,13 @@ STATUS.md, ROADMAP.md, docs/.
 
 ---
 
-## 🔒 Безопасность
+## Безопасность
 
-- **Секреты** (API-ключи Yandex Cloud) хранятся только в `web/.env`, файл в `.gitignore`, в git никогда не попадал
-- **На сервере** права: `chmod 600 web/.env`, владелец `legal:legal` (не root)
+- **Секреты** — только в `web/.env`, в git никогда не попадал
+- **Права на сервере:** `chmod 600 web/.env`, владелец `legal:legal`
 - **Деплой** через Deploy Key с read-only доступом
-- **CI/CD** — секреты через GitHub Secrets
-- **База** `cases.db` и `logs/` не коммитятся
-- **Доступ к документу** проверяется по паре (doc_id, case_number) — нельзя скачать чужой PDF, перебрав doc_id (IDOR закрыт 13.09.2026)
-- **SECRET_KEY** обязателен для старта — сервис падает при отсутствии вместо небезопасного дефолта
+- **IDOR** в `/case/pdf` закрыт (13.09.2026) — фильтр по (doc_id, case_number)
+- **SECRET_KEY** обязателен — сервис падает при отсутствии
 - **Cookie сессии** — HttpOnly, SameSite=Lax, Secure (при HTTPS)
-- **Логи без ПДн** — пишем длину адреса, не сам адрес
+- **Логи без ПДн** — длина адреса, не сам адрес
 - **ProxyFix** — правильный IP клиента из X-Forwarded-For
-
-Быстрая проверка локально:
-
-    git ls-files | Select-String "\.env"    # должно быть пусто
-    Test-Path .gitignore                    # должно быть True
-
