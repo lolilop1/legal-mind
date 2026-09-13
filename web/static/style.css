@@ -1075,3 +1075,48 @@ textarea::placeholder {
   margin-top: 6px;
   margin-bottom: 4px;
 }
+
+
+/* ─── Согласие на обработку ПДн (152-ФЗ) ─── */
+.privacy-consent {
+  margin: 20px 0 8px 0;
+  padding: 12px 14px;
+  background: #f8f9fb;
+  border-radius: 6px;
+  border-left: 3px solid #2f6df5;
+}
+
+.privacy-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #444;
+  margin: 0;
+  font-weight: 400;
+}
+
+.privacy-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.privacy-label a {
+  color: #2f6df5;
+  text-decoration: none;
+}
+
+.privacy-label a:hover {
+  text-decoration: underline;
+}
+
+/* Красная рамка если не отмечен и юзер попытался сабмитнуть */
+.privacy-consent.lm-error {
+  border-left-color: #d32f2f;
+  background: #fff5f5;
+}

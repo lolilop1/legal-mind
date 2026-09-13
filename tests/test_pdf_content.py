@@ -422,6 +422,7 @@ def _submit_and_get_pdf(client, form: dict) -> str:
 
     form_data = dict(form)
     form_data["_csrf_token"] = csrf
+    form_data["privacy_consent"] = "1"
     r = client.post("/submit", data=form_data, follow_redirects=False)
     if r.status_code != 302:
         return f"[НЕ 302: {r.status_code}]"

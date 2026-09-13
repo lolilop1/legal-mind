@@ -183,6 +183,7 @@ def main() -> int:
 
         data = dict(data)
         data["_csrf_token"] = csrf
+        data["privacy_consent"] = "1"
         body = urllib.parse.urlencode(data).encode("utf-8")
         req = urllib.request.Request(
             f"{_BASE}/submit",

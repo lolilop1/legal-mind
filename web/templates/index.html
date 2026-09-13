@@ -144,6 +144,15 @@
         <input type="text" name="organization" placeholder="ООО «УК Жилищник-1» или «Начальнику ОВД»" value="{{ form_data.get('organization', '') if form_data else '' }}">
       </div>
 
+      <div class="privacy-consent">
+        <label class="privacy-label">
+          <input type="checkbox" name="privacy_consent" id="privacy-consent" value="1" required>
+          <span>Я согласен(-на) на обработку персональных данных в соответствии
+          с <a href="/privacy" target="_blank" rel="noopener">политикой конфиденциальности</a>
+          (152-ФЗ)</span>
+        </label>
+      </div>
+
       <div class="wizard-nav">
         <button type="button" class="wizard-prev">← Назад</button>
         <button type="submit" class="wizard-submit">Составить заявление (PDF)</button>

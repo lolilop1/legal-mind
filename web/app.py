@@ -760,6 +760,13 @@ def submit():
                     "отправить."
                 )
 
+    # 152-ФЗ: согласие на обработку ПДн — обязательно
+    if not request.form.get("privacy_consent"):
+        errors.append(
+            "Подтвердите согласие на обработку персональных данных — "
+            "без этого мы не можем принять форму."
+        )
+
     phone_raw = request.form.get("телефон", "").strip()
     if not phone_raw:
         errors.append("Заполните контактный телефон")
@@ -970,6 +977,12 @@ def submit():
         return redirect(f"/case/{case_ref}?just_created=1")
 
     return _make_pdf_response(pdf_bytes)
+
+
+@app.route("/privacy")
+def privacy():
+    """Страница политики конфиденциальности (152-ФЗ)."""
+    return render_template("privacy.html")
 
 
 @app.route("/my")

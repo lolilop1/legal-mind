@@ -98,9 +98,10 @@ def _get_csrf(client):
 
 
 def _post_with_csrf(client, url, data, **kw):
-    """POST с автоматическим CSRF-токеном."""
+    """POST с автоматическим CSRF-токеном и согласием на ПДн."""
     data = dict(data)
     data["_csrf_token"] = _get_csrf(client)
+    data.setdefault("privacy_consent", "1")
     return client.post(url, data=data, **kw)
 
 
@@ -208,7 +209,7 @@ def main():
 
     # ═══ 7б. CSRF-защита ═══
     # POST без токена → 400
-    r_no_csrf = client.post("/submit", data=UK_FORM, follow_redirects=False)
+    r_no_csrf = client.post("/submit", data={**UK_FORM, "privacy_consent": "1"}, follow_redirects=False)
     check(r_no_csrf.status_code == 400,
           f"CSRF: POST без токена → 400 (получено {r_no_csrf.status_code})")
     html_no = r_no_csrf.get_data(as_text=True)
@@ -218,6 +219,7 @@ def main():
     # POST с чужим токеном → 400
     bad = dict(UK_FORM)
     bad["_csrf_token"] = "wrong-token-12345"
+    bad["privacy_consent"] = "1"
     r_bad = client.post("/submit", data=bad, follow_redirects=False)
     check(r_bad.status_code == 400, "CSRF: неверный токен → 400")
 
@@ -225,6 +227,7 @@ def main():
     tok = _get_csrf(client)
     good = dict(UK_FORM)
     good["_csrf_token"] = tok
+    good["privacy_consent"] = "1"
     r_good = client.post("/submit", data=good, follow_redirects=False)
     check(r_good.status_code == 302, "CSRF: валидный токен → 302")
 
@@ -232,6 +235,34 @@ def main():
     r_form = client.get("/")
     check('name="_csrf_token"' in r_form.get_data(as_text=True),
           "CSRF: скрытое поле в форме есть")
+
+    # ═══ 7в. 152-ФЗ: согласие на обработку ПДн ═══
+    # GET /privacy — страница политики
+    r_pv = client.get("/privacy")
+    check(r_pv.status_code == 200, "152-ФЗ: /privacy → 200")
+    html_pv = r_pv.get_data(as_text=True)
+    check("Политика конфиденциальности" in html_pv,
+          "152-ФЗ: заголовок на странице")
+    check("152-ФЗ" in html_pv, "152-ФЗ: номер закона в тексте")
+
+    # GET / — чекбокс в форме
+    r_form = client.get("/")
+    html_form = r_form.get_data(as_text=True)
+    check('name="privacy_consent"' in html_form,
+          "152-ФЗ: чекбокс в форме")
+    check('href="/privacy"' in html_form,
+          "152-ФЗ: ссылка на политику в форме")
+
+    # POST без privacy_consent → 200 (ошибка формы, не редирект)
+    tok = _get_csrf(client)
+    bad_pv = dict(UK_FORM)
+    bad_pv["_csrf_token"] = tok
+    # privacy_consent НЕ добавляем
+    r_bad = client.post("/submit", data=bad_pv, follow_redirects=False)
+    check(r_bad.status_code == 200,
+          f"152-ФЗ: POST без согласия → 200 ({r_bad.status_code})")
+    check("согласие" in r_bad.get_data(as_text=True).lower(),
+          "152-ФЗ: показана ошибка про согласие")
 
     # ═══ 8. Удаляем временную БД ═══
     try:
