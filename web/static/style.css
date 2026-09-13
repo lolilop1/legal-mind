@@ -1120,3 +1120,19 @@ textarea::placeholder {
   border-left-color: #d32f2f;
   background: #fff5f5;
 }
+
+
+/* Fix: air-datepicker не должен быть прозрачным */
+.air-datepicker {
+  background: #fff !important;
+  z-index: 9999 !important;
+}
+
+.air-datepicker-global-container {
+  z-index: 9998 !important;
+}
+
+/* Убедимся что календарь поверх всего внутри карточки */
+.air-datepicker.-active- {
+  opacity: 1 !important;
+}
