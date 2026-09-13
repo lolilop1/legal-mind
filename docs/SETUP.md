@@ -131,6 +131,20 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 6. После этого — любой git push автоматически деплоит.
 
+## UI-тесты (Playwright)
+
+Проверяют wizard, календари, показ/скрытие полей, inline-ошибки
+в headless Chromium. Разово установить браузер:
+
+    python -m pip install playwright
+    python -m playwright install chromium
+
+Прогон (5-10 сек):
+
+    python tests\test_ui_playwright.py
+
+Если Playwright не установлен — тест делает SKIP (не fail).
+
 ## Smoke-тест (локальный прогон 6 сценариев)
 
 Одна команда — поднимает Flask на 127.0.0.1:5001 (отдельная БД, прод
