@@ -70,3 +70,8 @@ make_context.ps1
 # Бэкап-ключи
 .env.backup
 
+
+# Одноразовые setup-скрипты с секретами
+setup_backup.sh
+deploy/setup_backup.sh
+
