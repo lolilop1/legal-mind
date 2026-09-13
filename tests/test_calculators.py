@@ -124,8 +124,9 @@ def main():
     ) is None, "build: срок не истёк → None")
 
     # ─── RATES: все 4 сценария ───
-    check(len(RATES) == 5, f"RATES: 5 сценариев (получено {len(RATES)})")
-    for sc in ("defect", "return14", "marketplace", "service", "delivery_delay"):
+    check(len(RATES) == 6, f"RATES: 6 сценариев (получено {len(RATES)})")
+    for sc in ("defect", "return14", "marketplace", "service",
+               "delivery_delay", "repair_delay"):
         check(sc in RATES, f"RATES: {sc} есть")
     check(RATES["defect"]["rate_percent"] == 1.0, "RATES: defect 1%")
     check(RATES["service"]["rate_percent"] == 3.0, "RATES: service 3%")
@@ -163,6 +164,31 @@ def main():
     )
     check(bc_mp is not None and bc_mp["penalty"] == 15000.0,
           "build marketplace без subtype: 1% (15000)")
+
+    # ─── repair_delay: 1%/день, срок ремонта 45 дней (ст. 20, 23) ───
+    d_repair = _dt.date(2026, 6, 1)
+    today_r = _dt.date(2026, 9, 13)
+    r_rep = calculate_penalty("repair_delay", 50000, d_repair, today=today_r)
+    check(r_rep["applicable"] is True, "repair: применимо")
+    check(r_rep["rate_percent"] == 1.0, "repair: ставка 1%")
+    check(r_rep["days_overdue"] == 59,
+          f"repair: 59 дней просрочки (получено {r_rep['days_overdue']})")
+    check(r_rep["amount"] == 29500.0,
+          f"repair: 29 500 (получено {r_rep['amount']})")
+    check("20" in r_rep["law"] and "23" in r_rep["law"],
+          "repair: нормы ст. 20, 23")
+    check(r_rep["capped"] is False, "repair: cap не применяется")
+
+    # build_calculation с subtype=repair_delay
+    bc_rep = build_calculation(
+        "defect",
+        {"цена": "50000", "дата_обращения": "01.06.2026"},
+        today=today_r,
+        subtype="repair_delay",
+    )
+    check(bc_rep is not None, "build repair: не None")
+    check(bc_rep["penalty"] == 29500.0, "build repair: penalty 29500")
+    check("20" in bc_rep["law"], "build repair: law 20")
 
     print(f"\nTotal: {passed + failed}  Passed: {passed}  Failed: {failed}")
     raise SystemExit(1 if failed else 0)

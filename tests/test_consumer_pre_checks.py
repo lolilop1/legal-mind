@@ -260,6 +260,61 @@ def main():
     check(not any("Подтип услуги" in k.label for k in r15.known),
           "Услуга 15: подтип не для defect")
 
+    # ─── Подтипы defect (отказ в ремонте, просрочка 45 дней) ───
+    r16 = run_consumer_pre_checks(
+        {
+            "проблема": "отнёс смартфон в сервис, отказали в ремонте, "
+                       "говорят не гарантийный случай",
+            "продавец": "ООО «М.Видео»",
+            "адрес_продавца": "Москва",
+        },
+        scenario="defect",
+    )
+    check(any("Подтип гарантийного случая" in k.label
+              and "отказ" in (k.value or "").lower()
+              for k in r16.known),
+          "Defect 16: подтип = отказ в ремонте")
+
+    r17 = run_consumer_pre_checks(
+        {
+            "проблема": "ремонт телефона длится уже третий месяц, "
+                       "обещали за 2 недели",
+            "продавец": "ООО «Сервис-Центр»",
+            "адрес_продавца": "Москва",
+        },
+        scenario="defect",
+    )
+    check(any("Подтип гарантийного случая" in k.label
+              and "просрочк" in (k.value or "").lower()
+              for k in r17.known),
+          "Defect 17: подтип = просрочка ремонта")
+
+    r18 = run_consumer_pre_checks(
+        {
+            "проблема": "телефон перестал работать через месяц, хочу вернуть",
+            "продавец": "ООО «М.Видео»",
+            "адрес_продавца": "Москва",
+        },
+        scenario="defect",
+    )
+    # «недостат» без окончания — ловит «недостаток» и «недостатком»
+    check(any("Подтип гарантийного случая" in k.label
+              and "недостат" in (k.value or "").lower()
+              for k in r18.known),
+          "Defect 18: подтип = товар с недостатком")
+
+    # подтип НЕ детектится для return14
+    r19 = run_consumer_pre_checks(
+        {
+            "проблема": "купила куртку, не подошёл размер",
+            "продавец": "ООО «Модный Магазин»",
+            "адрес_продавца": "Москва",
+        },
+        scenario="return14",
+    )
+    check(not any("Подтип гарантийного случая" in k.label for k in r19.known),
+          "Defect 19: подтип не для return14")
+
     print(f"\nTotal: {passed + failed}  Passed: {passed}  Failed: {failed}")
     raise SystemExit(1 if failed else 0)
 

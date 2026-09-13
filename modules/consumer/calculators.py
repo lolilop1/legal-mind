@@ -19,6 +19,14 @@ import datetime as _dt
 
 # Ставки и сроки по сценариям
 RATES: dict[str, dict] = {
+    # Просрочка гарантийного ремонта (ст. 20 п.1) — 1% за каждый
+    # день свыше 45 дней (ст. 23)
+    "repair_delay": {
+        "rate_percent": 1.0,
+        "deadline_days": 45,
+        "law": "ст. 20, 23 ЗоЗПП",
+        "cap": False,
+    },
     # Просрочка доставки (ст. 23.1 п.3) — 0.5% от суммы предоплаты
     "delivery_delay": {
         "rate_percent": 0.5,
@@ -205,6 +213,9 @@ def build_calculation(
     # Если подтип = просрочка доставки, работаем по ст. 23.1
     if subtype == "delivery_delay":
         scenario = "delivery_delay"
+    # Просрочка ремонта — ст. 20 (45 дней)
+    if subtype == "repair_delay":
+        scenario = "repair_delay"
 
     amount = parse_amount(
         user_data.get("цена") or user_data.get("amount") or user_data.get("сумма")

@@ -749,6 +749,11 @@ def submit():
             _sub = _detect_marketplace_subtype(user_data.get("проблема", ""))
             if _sub and _sub[0] == "Просрочка доставки":
                 _calc_subtype = "delivery_delay"
+        elif consumer_scenario == "defect":
+            from modules.consumer.pre_checks import _detect_defect_subtype
+            _sub = _detect_defect_subtype(user_data.get("проблема", ""))
+            if _sub and _sub[0] == "Просрочка ремонта (>45 дней)":
+                _calc_subtype = "repair_delay"
         calc = build_consumer_calc(
             consumer_scenario, user_data, subtype=_calc_subtype,
         )
