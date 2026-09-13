@@ -142,6 +142,20 @@ def hard_pre_check(user_data: dict) -> Optional[dict]:
     return None
 
 
+_KNOWN_MARKETPLACES = (
+    "ozon", "озон",
+    "wildberries", "вайлдберриз",
+    "яндекс маркет", "яндекс.маркет", "yandex market",
+    "avito", "авито",
+    "мегамаркет", "megamarket",
+    "aliexpress", "алиэкспресс",
+    "kazan express", "казан экспресс",
+    "lamoda", "ламода",
+    "sbermegamarket", "сбермегамаркет",
+    "детский мир", "detmir",
+)
+
+
 _LEGAL_PREFIXES = ("ООО", "АО", "ПАО", "ЗАО", "ОАО", "НКО",
                    "МУП", "ГУП", "ТСЖ", "ТД", "ТЦ")
 
@@ -161,6 +175,10 @@ def _is_legal_entity(seller: str) -> bool:
         return True
 
     if "самозанят" in s:
+        return True
+
+    # Известные маркетплейсы — юрлица
+    if any(m in s for m in _KNOWN_MARKETPLACES):
         return True
 
     # Физлицо без статуса

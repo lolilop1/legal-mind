@@ -113,7 +113,14 @@ def _format_addressee(seller: str) -> str:
 
     for prefix in _JURIDICAL_PREFIXES:
         if upper.startswith(prefix + " ") or upper.startswith(prefix + "."):
-            return f"Директору {s}"
+            rest = s[len(prefix):].lstrip(" .").strip()
+            if rest:
+                first_ch = rest[0]
+                if first_ch not in ("«", chr(0x201c), chr(34)):
+                    rest = rest.strip("«»" + chr(0x201c) + chr(0x201d) + chr(34)).strip()
+                    rest = "«" + rest + "»"
+                return f"Директору {prefix} {rest}"
+            return f"Директору {prefix}"
 
     if upper.startswith("ИП ") or upper.startswith("ИП."):
         return s

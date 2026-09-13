@@ -127,6 +127,18 @@ def _has_purchase_marker(text: str) -> bool:
     return bool(_PURCHASE_MARKERS.search(text))
 
 
+_KNOWN_MARKETPLACES_PRE = (
+    "ozon", "озон",
+    "wildberries", "вайлдберриз",
+    "яндекс маркет", "яндекс.маркет", "yandex market",
+    "avito", "авито",
+    "мегамаркет", "megamarket",
+    "aliexpress", "алиэкспресс",
+    "lamoda", "ламода",
+    "детский мир", "detmir",
+)
+
+
 _LEGAL_PREFIXES_PRE = ("ООО", "АО", "ПАО", "ЗАО", "ОАО", "НКО",
                         "МУП", "ГУП", "ТСЖ", "ТД", "ТЦ")
 
@@ -143,6 +155,9 @@ def _is_legal_entity_pre(seller: str) -> bool:
     if upper.startswith("ИП ") or upper.startswith("ИП."):
         return True
     if "самозанят" in s.lower():
+        return True
+    s_low = s.lower()
+    if any(m in s_low for m in _KNOWN_MARKETPLACES_PRE):
         return True
     return False
 

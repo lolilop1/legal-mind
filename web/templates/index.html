@@ -103,7 +103,7 @@
 
         <div id="seller-link-field" style="display: none;">
           <label>Ссылка на профиль/объявление <span style="color:#888; font-weight:400;">(если знаете)</span></label>
-          <input type="text" name="ссылка_продавца" placeholder="https://www.avito.ru/user/... или @nickname" value="{{ form_data.get('ссылка_продавца', '') if form_data else '' }}">
+          <input type="text" name="ссылка_продавца" placeholder="Ссылка на ПРОФИЛЬ продавца (не на товар): https://www.avito.ru/user/... или @nickname" value="{{ form_data.get('ссылка_продавца', '') if form_data else '' }}">
         </div>
 
         <label>Дата покупки</label>
@@ -442,6 +442,11 @@ window.lmOnTypeChange = function(val) {
     }
     if (upper.indexOf('ИП ') === 0 || upper.indexOf('ИП.') === 0) return true;
     if (s.toLowerCase().indexOf('самозанят') >= 0) return true;
+    var lower = s.toLowerCase();
+    var marketplaces = ['ozon','озон','wildberries','вайлдберриз','яндекс маркет','яндекс.маркет','avito','авито','мегамаркет','aliexpress','алиэкспресс','ламода','lamoda','детский мир','detmir'];
+    for (var k = 0; k < marketplaces.length; k++) {
+      if (lower.indexOf(marketplaces[k]) >= 0) return true;
+    }
     return false;
   }
 
