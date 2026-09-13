@@ -1,4 +1,4 @@
-﻿"""Legal Mind — Module 1: consumer rights complaint hard checks.
+"""Legal Mind — Module 1: consumer rights complaint hard checks.
 
 Hard-check для претензии по защите прав потребителей.
 Работает ДО LLM. Отсекает:
@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import re
 from typing import Optional
+
+from modules.consumer.marketplaces import MARKETPLACES
 
 
 _ALPHABET_RE = re.compile(r"[A-Za-zА-Яа-яЁё]")
@@ -176,17 +178,10 @@ def _non_returnable_message(category: str) -> str:
     )
 
 
-_KNOWN_MARKETPLACES = (
-    "ozon", "озон",
-    "wildberries", "вайлдберриз",
-    "яндекс маркет", "яндекс.маркет", "yandex market",
-    "avito", "авито",
-    "мегамаркет", "megamarket",
-    "aliexpress", "алиэкспресс",
-    "kazan express", "казан экспресс",
-    "lamoda", "ламода",
-    "sbermegamarket", "сбермегамаркет",
-    "детский мир", "detmir",
+_KNOWN_MARKETPLACES = tuple(
+    alias
+    for data in MARKETPLACES.values()
+    for alias in data["aliases"]
 )
 
 

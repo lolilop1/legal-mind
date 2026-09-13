@@ -14,6 +14,8 @@ from __future__ import annotations
 import datetime as _dt
 import re
 
+from modules.consumer.marketplaces import resolve_marketplace
+
 from core.pre_checks import (
     PreCheckReport,
     add_known,
@@ -156,15 +158,12 @@ def _has_purchase_marker(text: str) -> bool:
     return bool(_PURCHASE_MARKERS.search(text))
 
 
-_KNOWN_MARKETPLACES_PRE = (
-    "ozon", "озон",
-    "wildberries", "вайлдберриз",
-    "яндекс маркет", "яндекс.маркет", "yandex market",
-    "avito", "авито",
-    "мегамаркет", "megamarket",
-    "aliexpress", "алиэкспресс",
-    "lamoda", "ламода",
-    "детский мир", "detmir",
+from modules.consumer.marketplaces import MARKETPLACES as _MP_DICT
+
+_KNOWN_MARKETPLACES_PRE = tuple(
+    alias
+    for data in _MP_DICT.values()
+    for alias in data["aliases"]
 )
 
 
@@ -202,7 +201,16 @@ def run_consumer_pre_checks(user_data: dict, extras: dict | None = None,
     add_known(report, "Тип проблемы", "Защита прав потребителя")
 
     if seller:
-        add_known(report, "Продавец / исполнитель", seller)
+        mp_data = resolve_marketplace(seller)
+        if mp_data:
+            add_known(
+                report,
+                "Ответчик",
+                f"{mp_data['brand']} — владелец агрегатора, "
+                f"{mp_data['entity']}",
+            )
+        else:
+            add_known(report, "Продавец / исполнитель", seller)
     else:
         add_missing_critical(
             report,

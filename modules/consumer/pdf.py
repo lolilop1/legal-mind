@@ -1,4 +1,4 @@
-﻿"""Legal Mind — Module 1: PDF generation for consumer complaints.
+"""Legal Mind — Module 1: PDF generation for consumer complaints.
 
 Формат: претензия продавцу/исполнителю по ЗоЗПП.
 
@@ -20,6 +20,7 @@ from datetime import date
 
 from fpdf import FPDF
 
+from modules.consumer.marketplaces import resolve_marketplace
 from core.name_declension import decline_fio_dative, detect_gender_by_name, _detect_gender
 
 
@@ -108,6 +109,11 @@ def _format_addressee(seller: str) -> str:
     s = (seller or "").strip()
     if not s:
         return "Директору"
+
+    # Маркетплейс: адресуем владельцу агрегатора
+    mp = resolve_marketplace(s)
+    if mp:
+        return f"Владельцу агрегатора {mp['entity']} ({mp['brand']})"
 
     upper = s.upper()
 
