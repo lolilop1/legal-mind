@@ -41,6 +41,7 @@ _TESTS = [
     "test_app_security.py",
     "test_llm.py",
     "test_pdf_addressee.py",
+    "test_pdf_content.py",
 ]
 
 # Паттерны для извлечения "Total: X Passed: Y Failed: Z"

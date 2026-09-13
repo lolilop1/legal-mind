@@ -6,3 +6,4 @@ gunicorn>=21.0
 pymorphy3>=2.0
 pymorphy3-dicts-ru
 requests>=2.31
+pypdf>=4.0
