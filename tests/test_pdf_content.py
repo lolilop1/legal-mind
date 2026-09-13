@@ -305,6 +305,19 @@ def main():
     check("3.0%" in txt or "3,0%" in txt or "3 %" in txt or "3.0 %" in txt,
           "service: ставка 3%")
 
+    # ═══ 6б. Компенсация морального вреда во всех consumer-сценариях ═══
+    for label, form in [
+        ("defect", DEFECT_FORM),
+        ("return14", RETURN14_FORM),
+        ("marketplace", MARKETPLACE_FORM),
+        ("service", SERVICE_FORM),
+    ]:
+        txt_c = _submit_and_get_pdf(client, form)
+        check("Компенсировать моральный вред" in txt_c,
+              f"PDF {label}: пункт 'Компенсировать моральный вред'")
+        check("ст. 15" in txt_c,
+              f"PDF {label}: упоминание ст. 15 ЗоЗПП")
+
     # ═══ 7. Правовые нормы не выдуманы ═══
     # (проверка что LLM не выдумала ФЗ «О полиции» для UK, например)
     # Уже проверено выше — здесь просто sanity
