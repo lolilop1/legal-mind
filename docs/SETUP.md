@@ -10,6 +10,16 @@
 - API-ключ Yandex Cloud
 - Доступ к интернету для LLM
 
+## Модули проекта
+
+- `modules/uk/` — жалоба в УК
+- `modules/noise/` — жалоба на шум
+- `modules/consumer/` — потребитель (4 сценария):
+  `engine.py`, `configs/`, `marketplaces.py`, `calculators.py`,
+  `seller_kind.py`
+- `core/` — общий код (llm, case_db, name_declension, trace, pre_checks)
+- `region/` — определение региона
+
 ## Из Yandex Cloud нужно
 
 - API-ключ сервисного аккаунта с ролью ai.languageModels.user
@@ -46,7 +56,7 @@ python -c "import secrets; print(secrets.token_hex(32))"
 6. Тесты:
    cd ..
    python tests\run_all.py
-   Ожидание: 23 файла, 706 проверок, упало 0.
+   Ожидание: 24 файла, 761 проверок, упало 0.
 
 7. Запуск:
    cd web
@@ -156,6 +166,31 @@ python -c "import secrets; print(secrets.token_hex(32))"
 - **Цена** — база для расчёта неустойки
 - **Текущая цена** — если товар подорожал (ст. 24 ЗоЗПП)
 - Дата обращения к продавцу — от неё считается срок исполнения
+
+## Бэкапы cases.db
+
+Ежедневно в Yandex Object Storage (`s3://legal-mind-backups/daily/`),
+cron 03:00 UTC. Инструкция по развёртыванию и восстановлению —
+`docs/BACKUP.md`.
+
+Секреты бэкапа — в `/opt/legal_mind/.env.backup` (chmod 600, не в git),
+отдельно от боевых ключей `web/.env`.
+
+Проверка:
+
+    tail -20 /opt/legal_mind/logs/backup.log
+
+Ручной запуск:
+
+    cd /opt/legal_mind
+    sudo -u legal ./venv/bin/python scripts/backup_db.py
+
+## CSRF, rate limiting, 152-ФЗ
+
+- **CSRF** — токен в session, скрытое поле в форме. Без токена → 400.
+- **Rate limiting** — nginx `limit_req` (1 r/m на /submit)
+  + Python (50 дел/сутки на IP). При превышении → 429.
+- **152-ФЗ** — обязательный чекбокс согласия, страница `/privacy`.
 
 ## Автоматические проверки (CI)
 

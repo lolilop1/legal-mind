@@ -182,10 +182,11 @@
   (основное требование + неустойка + итого + основание)
 
 **Файлы:**
-- `engine.py`, `prompts.py`, `pdf.py`, `hardchecks.py`, `pre_checks.py`, `scenario_detect.py`, `marketplaces.py`, `calculators.py`
+- `engine.py`, `prompts.py`, `pdf.py`, `hardchecks.py`, `pre_checks.py`,
+  `scenario_detect.py`, `marketplaces.py`, `calculators.py`, `seller_kind.py`
 - `configs/defect.py`, `return14.py`, `marketplace.py`, `service.py`
 
-**Статус:** работает. 706 проверок.
+**Статус:** работает. 761 проверок.
 
 ---
 
@@ -208,6 +209,21 @@
 ### core/
 
 - `llm.py` — клиент Alice AI Flash (мок тестируется)
+- `seller_kind.py` — тип продавца (юрлицо/ИП/физлицо/маркетплейс),
+  единая точка правды для `_is_legal_entity`
+
+### Безопасность
+
+- **CSRF** — токен в session, hmac.compare_digest, скрытое поле
+  `_csrf_token` в форме. Без токена → 400 + stop.html.
+- **Rate limiting** — nginx `limit_req` (1 r/m на /submit),
+  Python in-memory (50 дел/сутки на IP). При превышении → 429.
+- **152-ФЗ** — обязательный чекбокс согласия на обработку ПДн,
+  страница `/privacy`, серверная проверка. Без согласия форма не
+  принимается.
+- **Бэкапы** — `cases.db` ежедневно в Yandex Object Storage
+  (`scripts/backup_db.py`, cron 03:00 UTC, retention 30 дней).
+- **IDOR** — доступ к PDF по паре (doc_id, case_number).
 - `name_declension.py` — склонение ФИО (pymorphy3, дательный + родительный)
 - `phone_check.py` — валидация и нормализация телефона
 - `case_db.py` — доступ к БД CASE
@@ -237,12 +253,13 @@
 - `rag_mass_v4.py`, `rag_hardcode_fixed.py` — сбор базы регионов
 - `adversarial_tests.py` — 29 атакующих кейсов
 
-### tests/ — 23 файла, 706 проверок
+### tests/ — 24 файла, 761 проверок
 
 **Ядро (core):** test_case_id, test_case_db, test_address, test_name_declension, test_phone_check, test_trace, test_pre_checks, test_llm
 **UK:** test_uk_hardchecks (62), test_entity_check, test_pdf_generation
 **Шум:** test_noise_hardchecks (19)
 **Регион:** test_region_extractor (26)
 **Consumer:** test_consumer_hardchecks, test_consumer_pre_checks, test_consumer_scenario, test_marketplaces (61), test_calculators (64), test_pdf_addressee (25)
-**Flask app:** test_app_routes (30), test_app_security (20)
+**Flask app:** test_app_routes (35), test_app_security (26)
+**Refactor:** test_seller_kind (37)
 **E2E:** test_pdf_content (39), test_ui_playwright (19)

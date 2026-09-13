@@ -27,7 +27,7 @@
 
 - modules/uk/ — жалоба в УК
 - modules/noise/ — жалоба на шум
-- modules/consumer/ — защита прав потребителя
+- modules/consumer/ — защита прав потребителя (engine, configs, marketplaces, calculators, seller_kind)
 - core/ — общий код (llm, case_db, name_declension, trace, pre_checks)
 - region/ — определение региона (для шума)
 
@@ -78,6 +78,15 @@ GitHub Actions → SSH на сервер → git pull → restart → health che
 Ожидаемый ответ:
 
     {"status": "ok", "llm_configured": true, "cases_total": 0}
+
+## Безопасность
+
+- **CSRF** — токен в session, скрытое поле `_csrf_token` в форме
+- **Rate limiting** — nginx 1 r/m на /submit + Python 50 дел/сутки на IP
+- **152-ФЗ** — обязательный чекбокс согласия, страница /privacy
+- **Cookie** — HttpOnly, SameSite=Lax, Secure (условно)
+- **Логи без ПДн** — длина адреса, не сам адрес
+- **Бэкапы** — cases.db в Object Storage, cron 03:00 UTC
 
 ## Что дальше
 

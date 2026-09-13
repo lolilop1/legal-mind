@@ -64,12 +64,15 @@ Python 3.12+, Flask, gunicorn, nginx, systemd, fpdf2, pypdf, pymorphy3, Alice AI
 
 ## Структура
 
-- `core/` — общий код
+- `core/` — общий код (llm, case_db, trace, pre_checks)
 - `region/` — определение региона
 - `modules/` — uk, noise, consumer
+  - `consumer/seller_kind.py` — тип продавца (юрлицо/ИП/физлицо/маркетплейс)
+  - `consumer/marketplaces.py` — справочник 12 площадок
+  - `consumer/calculators.py` — калькулятор неустойки
 - `web/` — Flask, шаблоны, статика
 - `scripts/` — утилиты + smoke-тест
-- `tests/` — 23 файла, 706 проверок
+- `tests/` — 24 файла, 761 проверок
 - `docs/` — документация
 - `deploy/` — инфраструктура
 
@@ -99,11 +102,41 @@ STATUS.md, ROADMAP.md, docs/.
 
 ## Безопасность
 
-- **Секреты** — только в `web/.env`, в git никогда не попадал
-- **Права на сервере:** `chmod 600 web/.env`, владелец `legal:legal`
-- **Деплой** через Deploy Key с read-only доступом
-- **IDOR** в `/case/pdf` закрыт (13.09.2026) — фильтр по (doc_id, case_number)
+Пройден внешний аудит (13-14.09.2026). Закрыто 9 из 11 пунктов.
+
+### Доступ и данные
+- **IDOR** в `/case/<ref>/pdf/<id>` закрыт — фильтр по (doc_id, case_number)
 - **SECRET_KEY** обязателен — сервис падает при отсутствии
-- **Cookie сессии** — HttpOnly, SameSite=Lax, Secure (при HTTPS)
-- **Логи без ПДн** — длина адреса, не сам адрес
+- **Секреты** — только в `web/.env` и `.env.backup`, оба в `.gitignore`
+- **Права на сервере:** `chmod 600` на `.env` и `.env.backup`, владелец `legal:legal`
+- **Деплой** через Deploy Key с read-only доступом
+
+### Защита от атак
+- **CSRF** — ручной токен в session + `hmac.compare_digest`,
+  скрытое поле `_csrf_token` в форме, 400 при провале
+- **Rate limiting** — двойной слой:
+  - nginx `limit_req` (1 r/m на `/submit`, 5 r/s общий)
+  - Python in-memory (50 дел/сутки на IP)
 - **ProxyFix** — правильный IP клиента из X-Forwarded-For
+- **Логи без ПДн** — длина адреса, не сам адрес
+
+### Cookie и HTTPS
+- **Cookie сессии** — HttpOnly, SameSite=Lax, Secure (включается при HTTPS)
+- **HTTPS** — ждёт домена legalmind.su
+
+### 152-ФЗ (персональные данные)
+- Обязательный чекбокс согласия на обработку ПДн в форме
+- Страница `/privacy` с политикой конфиденциальности
+- Серверная проверка согласия — без него форма не принимается
+
+### Бэкапы
+- Ежедневный бэкап `cases.db` в Yandex Object Storage
+- Cron на сервере: 03:00 UTC (06:00 МСК)
+- Retention: 30 дней (ротация автоматическая)
+- SQLite `.backup()` — атомарно, безопасно при параллельных читателях
+- Инструкция: `docs/BACKUP.md`
+
+### CI/CD
+- Tests на каждый push (761 проверка + Playwright)
+- Deploy через `workflow_run` — только после зелёных Tests
+- Smoke против прода по понедельникам

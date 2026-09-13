@@ -70,6 +70,7 @@ PDF отдаётся пользователю
     │       ├── scenario_detect.py  — авто-детект сценария
     │       ├── marketplaces.py     — справочник 12 площадок
     │       ├── calculators.py      — неустойка (6 ставок)
+    │       ├── seller_kind.py      — тип продавца (юрлицо/физлицо)
     │       └── configs/
     │           ├── defect.py       — ст. 18, 20, 21, 23 (отказ в ремонте)
     │           ├── return14.py     — ст. 25 + невозвратные/техсложные
@@ -85,7 +86,7 @@ PDF отдаётся пользователю
     │   └── .env
     │
     ├── scripts/                 — утилиты + smoke
-    ├── tests/                   — 23 файла, 706 проверок
+    ├── tests/                   — 24 файла, 761 проверок
     ├── docs/                    — документация
     ├── deploy/                  — инфраструктура
     └── .github/workflows/       — CI/CD
@@ -144,6 +145,8 @@ PDF отдаётся пользователю
 - `region/data/embeddings.json` — 85 векторов (405 КБ)
 - `web/cases.db` — SQLite, CASE + PDF + события + calculation (JSON)
 - `/opt/legal_mind/logs/requests.log` — метаданные запросов (без ПДн)
+- `s3://legal-mind-backups/daily/` — ежедневные бэкапы cases.db
+  (retention 30 дней, cron 03:00 UTC)
 
 ### Планируется
 - Миграция на Yandex Managed PostgreSQL (когда будет нагрузка)
@@ -161,8 +164,10 @@ YandexGPT Pro                   | RAG (разово)
 
 ## Безопасность
 
+Пройден внешний аудит (13-14.09.2026), закрыто 9 из 11.
+
 - HTTPS через Let's Encrypt (после домена)
-- .env с правами 600, не в git
+- .env + .env.backup — права 600, не в git
 - Отдельный пользователь `legal` для gunicorn
 - gunicorn слушает только на 127.0.0.1:5000
 - Логи без ПДн
@@ -170,6 +175,10 @@ YandexGPT Pro                   | RAG (разово)
 - SECRET_KEY обязателен
 - Cookie: HttpOnly, SameSite=Lax, Secure (при HTTPS)
 - IDOR закрыт в `/case/<ref>/pdf/<id>` (фильтр по case_number)
+- **CSRF** — токен в session + hmac.compare_digest
+- **Rate limiting** — nginx `limit_req` + Python in-memory (50/сутки)
+- **152-ФЗ** — чекбокс согласия + /privacy + серверная проверка
+- **Бэкапы cases.db** — ежедневно в Yandex Object Storage (cron)
 
 ## CI/CD
 

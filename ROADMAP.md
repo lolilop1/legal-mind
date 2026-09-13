@@ -15,6 +15,15 @@
 - Модульная структура
 - Документация
 
+### Security-аудит ✅ (13-14.09.2026)
+
+- IDOR в /case/pdf закрыт
+- CSRF-защита формы
+- Rate limiting (nginx + Python)
+- 152-ФЗ: согласие + /privacy
+- Бэкапы cases.db в Object Storage (cron)
+- Дедуп _is_legal_entity → seller_kind
+
 ## Этап 1 — Домен + HTTPS ⏳
 
 - Купить legalmind.su (199 ₽)

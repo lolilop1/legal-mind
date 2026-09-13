@@ -1,5 +1,60 @@
 # Legal Mind — Changelog
 
+## 2026-09-14 (Security-аудит: CSRF, rate limit, 152-ФЗ, бэкапы, дедуп)
+
+Закрыто 9 из 11 пунктов внешнего аудита.
+
+### Добавлено
+
+**CSRF-защита `/submit`:**
+- `_get_csrf_token()` + `_check_csrf()` (hmac.compare_digest)
+- Скрытое поле `_csrf_token` в форме
+- Без токена → 400 + stop.html
+- +5 тестов в `test_app_routes.py`
+
+**Rate limiting (двойной слой):**
+- nginx: `limit_req_zone` + `limit_req` (1 r/m на `/submit`,
+  5 r/s на всё остальное)
+- Python: `_rate_limit_check(ip)` — 50 дел/сутки на IP
+  (in-memory dict + lock, сброс в полночь)
+- +5 тестов в `test_app_security.py`
+
+**152-ФЗ:**
+- Чекбокс «Согласен(-на) на обработку ПДн» (обязательный)
+- Страница `/privacy` — политика из 7 разделов
+- Серверная проверка `privacy_consent`
+- CSS `.privacy-consent`
+- +6 тестов
+
+**Бэкапы `cases.db`:**
+- `scripts/backup_db.py`: sqlite `.backup()` → gzip → S3
+- Yandex Object Storage: `legal-mind-backups`
+- Cron 03:00 UTC (06:00 МСК), retention 30 дней
+- Отдельный `.env.backup` (chmod 600, в .gitignore)
+- `docs/BACKUP.md` — инструкция + восстановление
+
+**Дедуп `_is_legal_entity`:**
+- `modules/consumer/seller_kind.py` — единая точка правды
+- Алиасы в `hardchecks.py` и `pre_checks.py`
+- JS-комментарий про синхронизацию
+- `tests/test_seller_kind.py` — +37 проверок
+
+**CI/CD:**
+- Actions обновлены: checkout@v5, setup-python@v6, upload-artifact@v5
+  (Node.js 20 → 24)
+- `test_app_routes.py` (30 проверок через test_client)
+- `test_app_security.py` (+25 с rate limit)
+
+### Тесты
+- 706 → 761 проверок
+- 23 → 24 файла
+
+### Осталось из аудита
+- Шифрование `cases.db` at rest (SQLCipher) — отдельная сессия
+- HTTPS — ждёт домена legalmind.su
+
+---
+
 ## 2026-09-13 (Модуль 1: финальная полировка — ст. 15, 16, 19, 24 + 5 новых подтипов услуг)
 
 ### Добавлено
@@ -41,8 +96,8 @@
 - Регекс «нарушен срок» ловит «обещали... делают третий месяц»
 
 ### Тесты
-- 660 → 706 проверок (+16 за полировку М1)
-- Всего 23 файла
+- 660 → 761 проверок (+16 за полировку М1)
+- Всего 24 файла
 
 ---
 
@@ -106,7 +161,7 @@
 
 ### Тесты
 
-- **305 → 706 проверок**, 15 → 23 файла
+- **305 → 761 проверок**, 15 → 24 файла
 - Flask-роуты (30), security-регресс (20), LLM (19), шапка PDF (25),
   контент PDF (39), UI через Playwright (19), marketplaces (61),
   calculators (64)

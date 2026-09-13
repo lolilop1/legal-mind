@@ -17,7 +17,7 @@ Legal Trace (этап 5)                   | OK
 Автодеплой (этап 8)                    | OK
 CI: Tests + Deploy + Smoke             | OK
 Модульная структура                    | OK
-Тесты (23 файла, 706 проверок)         | OK (706/706)
+Тесты (24 файла, 761 проверок)         | OK (761/761)
 UI-тесты (Playwright, 19)              | OK
 Adversarial (29 кейсов)                | OK (29/29)
 Домен + HTTPS                          | ждёт оплаты
@@ -27,7 +27,7 @@ Adversarial (29 кейсов)                | OK (29/29)
 ## Что сделано
 
 ### Модульность
-Модульная структура (core/region/modules/web/scripts/tests/docs/deploy). 23 файла тестов, 706 проверок.
+Модульная структура (core/region/modules/web/scripts/tests/docs/deploy). 24 файла тестов, 761 проверок.
 
 ### CASE (этап 3)
 core/case_db.py, core/case_id.py, web/schema.sql. Экран /my, карточка /case. core/labels.py.
@@ -84,6 +84,27 @@ GitHub репо lolilop1/legal-mind. Deploy Key. deploy.yml через workflow_
 - Cookie flags: HttpOnly, SameSite=Lax, Secure-условно
 - ProxyFix для правильного IP
 - ПДн убраны из логов (только len=N)
+
+### Security-аудит (13-14.09.2026)
+Внешний аудит — закрыто 9 из 11 пунктов.
+
+- **CSRF** — токен в session (hmac.compare_digest), скрытое поле
+  `_csrf_token` в форме, 400 при провале. +5 тестов.
+- **Rate limiting** — двойной слой: nginx `limit_req` (1 r/m на
+  `/submit`) + Python in-memory (50 дел/сутки на IP). +5 тестов.
+- **152-ФЗ** — чекбокс согласия + страница `/privacy` +
+  серверная проверка. +6 тестов.
+- **Бэкапы** — `cases.db` в Yandex Object Storage, cron 03:00 UTC,
+  retention 30 дней. `scripts/backup_db.py`. `docs/BACKUP.md`.
+- **Дедуп** `_is_legal_entity` → `modules/consumer/seller_kind.py`
+  (единая точка правды для Python). +37 тестов.
+- **CI** — deploy только после зелёных тестов (`workflow_run`).
+  Интеграционные тесты Flask-роутов через `test_client` (30 проверок).
+- **Actions** обновлены: checkout@v5, setup-python@v6,
+  upload-artifact@v5 (Node.js 20 → 24).
+
+Осталось: шифрование `cases.db` at rest (отдельная сессия),
+HTTPS (ждёт домена).
 
 ### Документация
 README, STATUS, ROADMAP, docs/ARCHITECTURE, DECISIONS, MODULES, CHANGELOG, SETUP, web/README — все синхронизированы с кодом.
