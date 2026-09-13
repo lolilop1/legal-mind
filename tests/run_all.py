@@ -38,6 +38,7 @@ _TESTS = [
     "test_marketplaces.py",
     "test_calculators.py",
     "test_app_routes.py",
+    "test_app_security.py",
 ]
 
 # Паттерны для извлечения "Total: X Passed: Y Failed: Z"
