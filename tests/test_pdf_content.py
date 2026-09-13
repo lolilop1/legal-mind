@@ -411,10 +411,18 @@ SERVICE_INSURANCE_FORM = {
 
 
 def _submit_and_get_pdf(client, form: dict) -> str:
-    """POST /submit -> GET /case/<ref> -> находим doc_id -> скачиваем PDF."""
+    """POST /submit (с CSRF) -> GET /case/<ref> -> находим doc_id -> скачиваем PDF."""
     import re as _re
 
-    r = client.post("/submit", data=form, follow_redirects=False)
+    # CSRF-токен из формы главной
+    r_home = client.get("/")
+    html_home = r_home.get_data(as_text=True)
+    m_csrf = _re.search(r'name="_csrf_token"\s+value="([^"]+)"', html_home)
+    csrf = m_csrf.group(1) if m_csrf else ""
+
+    form_data = dict(form)
+    form_data["_csrf_token"] = csrf
+    r = client.post("/submit", data=form_data, follow_redirects=False)
     if r.status_code != 302:
         return f"[НЕ 302: {r.status_code}]"
     loc = r.headers.get("Location", "")

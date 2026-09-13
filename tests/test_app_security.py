@@ -224,6 +224,34 @@ def main():
           "/health: не раскрывает api_key")
     check(j.get("status") == "ok", "/health: status=ok")
 
+    # ═══ 7б. Rate limiting ═══
+    import web.app as _app
+
+    _app._RATE_STORE.clear()
+    _ok, _rem = _app._rate_limit_check("10.0.0.1")
+    check(_ok is True, "Rate: первый запрос разрешён")
+    check(_rem == _app._RATE_LIMIT_PER_DAY - 1,
+          f"Rate: остаток {_app._RATE_LIMIT_PER_DAY - 1}")
+
+    _app._RATE_STORE.clear()
+    for _ in range(_app._RATE_LIMIT_PER_DAY):
+        _app._rate_limit_check("10.0.0.2")
+    _ok2, _rem2 = _app._rate_limit_check("10.0.0.2")
+    check(_ok2 is False, "Rate: лимит исчерпан -> False")
+    check(_rem2 == 0, "Rate: остаток 0")
+
+    _ok3, _ = _app._rate_limit_check("")
+    check(_ok3 is True, "Rate: пустой IP -> разрешено")
+
+    _app._RATE_STORE.clear()
+    _app._rate_limit_check("10.0.0.3")
+    _app._rate_limit_check("10.0.0.3")
+    _ok4, _rem4 = _app._rate_limit_check("10.0.0.4")
+    check(_ok4 is True and _rem4 == _app._RATE_LIMIT_PER_DAY - 1,
+          "Rate: разные IP — независимые счётчики")
+
+    _app._RATE_STORE.clear()
+
     # ═══ 8. cleanup ═══
     try:
         os.unlink(_TMP_DB)

@@ -170,6 +170,19 @@ def main() -> int:
 
     for i, (label, data) in enumerate(CASES, 1):
         print(f"[{i}/{len(CASES)}] {label}")
+
+        # CSRF-токен
+        try:
+            r_home = opener.open(f"{base_url}/", timeout=30)
+            html_home = r_home.read().decode("utf-8", errors="replace")
+            m_csrf = re.search(r'name="_csrf_token"\s+value="([^"]+)"', html_home)
+            csrf = m_csrf.group(1) if m_csrf else ""
+        except Exception as e:
+            print(f"  WARN: не удалось получить CSRF: {e}")
+            csrf = ""
+
+        data = dict(data)
+        data["_csrf_token"] = csrf
         body = urllib.parse.urlencode(data).encode("utf-8")
         req = urllib.request.Request(
             f"{_BASE}/submit",

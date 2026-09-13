@@ -23,6 +23,11 @@ _ENV_PATH = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=_ENV_PATH if _ENV_PATH.exists() else None)
 
 # ─── Импорты наших модулей ───
+import hmac
+import secrets
+import threading
+from datetime import date as _date
+
 from flask import Flask, render_template, request, send_file, abort, session, redirect
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -134,6 +139,56 @@ except Exception as e:
 _SESSION_KEY = "my_cases"
 _MAX_CASES_IN_SESSION = 100
 _SESSION_FORM_KEY = "last_form"
+_CSRF_TOKEN_KEY = "csrf_token"
+
+
+def _get_csrf_token() -> str:
+    """Возвращает CSRF-токен из session, создаёт если нет."""
+    token = session.get(_CSRF_TOKEN_KEY)
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session[_CSRF_TOKEN_KEY] = token
+    return token
+
+
+def _check_csrf() -> bool:
+    """Проверяет токен из формы против session."""
+    sent = request.form.get("_csrf_token", "")
+    expected = session.get(_CSRF_TOKEN_KEY, "")
+    if not sent or not expected:
+        return False
+    return hmac.compare_digest(sent, expected)
+
+
+# Rate limiting per IP (in-memory, per-process)
+# 50 документов в сутки на IP — защита бюджета LLM.
+_RATE_LIMIT_PER_DAY = int(os.getenv("RATE_LIMIT_PER_DAY", "50"))
+_RATE_STORE: dict[str, dict] = {}
+_RATE_LOCK = threading.Lock()
+
+
+def _rate_limit_check(ip: str) -> tuple[bool, int]:
+    """Проверяет суточный лимит дел на IP.
+
+    Returns: (allowed, remaining)
+    """
+    if not ip or _RATE_LIMIT_PER_DAY <= 0:
+        return True, _RATE_LIMIT_PER_DAY
+    today = _date.today().isoformat()
+    with _RATE_LOCK:
+        if len(_RATE_STORE) > 5000:
+            stale = [k for k, v in _RATE_STORE.items() if v.get("date") != today]
+            for k in stale:
+                _RATE_STORE.pop(k, None)
+
+        rec = _RATE_STORE.get(ip)
+        if not rec or rec.get("date") != today:
+            _RATE_STORE[ip] = {"date": today, "count": 1}
+            return True, _RATE_LIMIT_PER_DAY - 1
+        if rec["count"] >= _RATE_LIMIT_PER_DAY:
+            return False, 0
+        rec["count"] += 1
+        return True, _RATE_LIMIT_PER_DAY - rec["count"]
 
 
 def _add_case_to_session(case_ref: str) -> None:
@@ -614,11 +669,35 @@ def index():
     return render_template("index.html",
                            my_cases_count=my_cases_count,
                            form_data=saved_form,
-                           errors=None)
+                           errors=None,
+                           csrf_token=_get_csrf_token())
 
 
 @app.route("/submit", methods=["POST"])
 def submit():
+    # CSRF-проверка — первым делом
+    if not _check_csrf():
+        log.warning("CSRF-fail: ip=%s", request.remote_addr)
+        return render_template("stop.html",
+                               title="Ошибка безопасности",
+                               reason="Форма устарела или запрос подделан. "
+                                      "Обновите страницу и попробуйте снова.",
+                               emergency=False), 400
+
+    # Rate limit — 50 дел/сутки на IP (защита бюджета LLM)
+    _ip = request.remote_addr or ""
+    _allowed, _remaining = _rate_limit_check(_ip)
+    if not _allowed:
+        log.warning("Rate limit exceeded: ip=%s limit=%d/day",
+                    _ip, _RATE_LIMIT_PER_DAY)
+        return render_template("stop.html",
+                               title="Слишком много запросов",
+                               reason="Вы превысили суточный лимит создания "
+                                      "документов. Это защита от автоматических "
+                                      "атак. Попробуйте завтра или свяжитесь "
+                                      "с нами, если это ошибка.",
+                               emergency=False), 429
+
     problem_type = request.form.get("problem_type", "uk")
     user_data = {
         "проблема": request.form.get("проблема", "").strip(),
@@ -695,7 +774,8 @@ def submit():
         return render_template("index.html",
                                my_cases_count=len(_get_my_cases()),
                                form_data=request.form,
-                               errors=errors)
+                               errors=errors,
+                               csrf_token=_get_csrf_token())
 
     requisites = {
         "фио": decline_fio(request.form.get("фио", "").strip()),

@@ -88,6 +88,22 @@ CONSUMER_FORM = {
 }
 
 
+def _get_csrf(client):
+    """Забирает CSRF-токен из формы (неявный GET /)."""
+    import re as _re
+    r = client.get("/")
+    html = r.get_data(as_text=True)
+    m = _re.search(r'name="_csrf_token"\s+value="([^"]+)"', html)
+    return m.group(1) if m else ""
+
+
+def _post_with_csrf(client, url, data, **kw):
+    """POST с автоматическим CSRF-токеном."""
+    data = dict(data)
+    data["_csrf_token"] = _get_csrf(client)
+    return client.post(url, data=data, **kw)
+
+
 def main():
     passed = 0
     failed = 0
@@ -127,7 +143,7 @@ def main():
     check(r.status_code == 404, "GET /case/XXXX → 404")
 
     # ═══ 3. POST /submit UK — счастливый путь ═══
-    r = client.post("/submit", data=UK_FORM, follow_redirects=False)
+    r = _post_with_csrf(client, "/submit", UK_FORM, follow_redirects=False)
     check(r.status_code == 302, "POST /submit UK → 302 (redirect)")
     loc = r.headers.get("Location", "")
     check("/case/" in loc, f"POST /submit UK → redirect на /case/ ({loc[:60]})")
@@ -155,7 +171,7 @@ def main():
     check(r.data[:5] == b"%PDF-", "PDF заголовок %PDF-")
 
     # ═══ 4. Валидация: пустые поля ═══
-    r = client.post("/submit", data={"problem_type": "uk"}, follow_redirects=False)
+    r = _post_with_csrf(client, "/submit", data={"problem_type": "uk"}, follow_redirects=False)
     check(r.status_code == 200, "POST с пустыми полями → 200 (не 302)")
     html = r.get_data(as_text=True)
     check("Проверьте форму" in html or "Заполните" in html,
@@ -164,7 +180,7 @@ def main():
     # ═══ 5. Валидация: плохой телефон ═══
     bad = dict(UK_FORM)
     bad["телефон"] = "123"
-    r = client.post("/submit", data=bad, follow_redirects=False)
+    r = _post_with_csrf(client, "/submit", data=bad, follow_redirects=False)
     check(r.status_code == 200, "POST с плохим телефоном → 200")
     check("коротк" in r.get_data(as_text=True).lower()
           or "телефон" in r.get_data(as_text=True).lower(),
@@ -174,7 +190,7 @@ def main():
     mp = dict(CONSUMER_FORM)
     mp["продавец"] = "Ozon"
     mp["адрес_продавца"] = ""
-    r = client.post("/submit", data=mp, follow_redirects=False)
+    r = _post_with_csrf(client, "/submit", data=mp, follow_redirects=False)
     check(r.status_code == 200, "POST marketplace без номера → 200 (не 302)")
     html = r.get_data(as_text=True)
     check("Номер заказа" in html or "номер заказа" in html.lower(),
@@ -182,13 +198,40 @@ def main():
 
     # ═══ 7. IDOR-регресс через роут ═══
     # Создаём второй CASE
-    r = client.post("/submit", data=UK_FORM, follow_redirects=False)
+    r = _post_with_csrf(client, "/submit", UK_FORM, follow_redirects=False)
     case_ref2 = r.headers.get("Location", "").split("/case/")[-1].split("?")[0]
     check(case_ref2 != case_ref, "Второй POST создал другой CASE")
     # Пытаемся скачать doc_id=1 (принадлежит первому) через второй CASE
     r = client.get(f"/case/{case_ref2}/pdf/1")
     check(r.status_code == 404,
           "IDOR-регресс: чужой doc_id через свой case_ref → 404")
+
+    # ═══ 7б. CSRF-защита ═══
+    # POST без токена → 400
+    r_no_csrf = client.post("/submit", data=UK_FORM, follow_redirects=False)
+    check(r_no_csrf.status_code == 400,
+          f"CSRF: POST без токена → 400 (получено {r_no_csrf.status_code})")
+    html_no = r_no_csrf.get_data(as_text=True)
+    check("Ошибка безопасности" in html_no or "подделан" in html_no,
+          "CSRF: показана страница ошибки")
+
+    # POST с чужим токеном → 400
+    bad = dict(UK_FORM)
+    bad["_csrf_token"] = "wrong-token-12345"
+    r_bad = client.post("/submit", data=bad, follow_redirects=False)
+    check(r_bad.status_code == 400, "CSRF: неверный токен → 400")
+
+    # POST с валидным токеном → 302 (уже проверено выше, но подтвердим)
+    tok = _get_csrf(client)
+    good = dict(UK_FORM)
+    good["_csrf_token"] = tok
+    r_good = client.post("/submit", data=good, follow_redirects=False)
+    check(r_good.status_code == 302, "CSRF: валидный токен → 302")
+
+    # Токен появляется в форме GET /
+    r_form = client.get("/")
+    check('name="_csrf_token"' in r_form.get_data(as_text=True),
+          "CSRF: скрытое поле в форме есть")
 
     # ═══ 8. Удаляем временную БД ═══
     try:
