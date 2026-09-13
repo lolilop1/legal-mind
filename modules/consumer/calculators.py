@@ -19,6 +19,13 @@ import datetime as _dt
 
 # Ставки и сроки по сценариям
 RATES: dict[str, dict] = {
+    # Просрочка доставки (ст. 23.1 п.3) — 0.5% от суммы предоплаты
+    "delivery_delay": {
+        "rate_percent": 0.5,
+        "deadline_days": 10,
+        "law": "ст. 23.1 ЗоЗПП",
+        "cap": True,
+    },
     "defect": {
         "rate_percent": 1.0,
         "deadline_days": 10,
@@ -184,13 +191,21 @@ def build_calculation(
     scenario: str,
     user_data: dict,
     today: _dt.date | None = None,
+    subtype: str | None = None,
 ) -> dict | None:
     """Собирает расчёт из полей формы. None если считать нечего.
 
     Читает:
     - цена / сумма (если указана)
     - дата_обращения (когда требование предъявлено продавцу)
+
+    Если subtype == "delivery_delay" — использует ставку 0.5% (ст. 23.1).
     """
+
+    # Если подтип = просрочка доставки, работаем по ст. 23.1
+    if subtype == "delivery_delay":
+        scenario = "delivery_delay"
+
     amount = parse_amount(
         user_data.get("цена") or user_data.get("amount") or user_data.get("сумма")
     )

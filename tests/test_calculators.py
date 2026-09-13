@@ -124,12 +124,45 @@ def main():
     ) is None, "build: срок не истёк → None")
 
     # ─── RATES: все 4 сценария ───
-    check(len(RATES) == 4, f"RATES: 4 сценария (получено {len(RATES)})")
-    for sc in ("defect", "return14", "marketplace", "service"):
+    check(len(RATES) == 5, f"RATES: 5 сценариев (получено {len(RATES)})")
+    for sc in ("defect", "return14", "marketplace", "service", "delivery_delay"):
         check(sc in RATES, f"RATES: {sc} есть")
     check(RATES["defect"]["rate_percent"] == 1.0, "RATES: defect 1%")
     check(RATES["service"]["rate_percent"] == 3.0, "RATES: service 3%")
     check(RATES["service"]["cap"] is True, "RATES: service cap=True")
+
+    # ─── delivery_delay: 0.5%/день (ст. 23.1), cap = сумма предоплаты ───
+    r_dd = calculate_penalty("delivery_delay", 50000, d, today=today)
+    check(r_dd["applicable"] is True, "delivery: применимо")
+    check(r_dd["rate_percent"] == 0.5, "delivery: ставка 0.5%")
+    check(r_dd["amount"] == 7500.0,
+          f"delivery: 7 500 за 30 дн. (получено {r_dd['amount']})")
+    check(r_dd["capped"] is False, "delivery: cap не упёрся")
+    check("23.1" in r_dd["law"], "delivery: норма ст. 23.1")
+
+    today_very_long = _dt.date(2027, 3, 15)
+    r_dd_cap = calculate_penalty("delivery_delay", 50000, d, today=today_very_long)
+    check(r_dd_cap["amount"] == 50000.0,
+          f"delivery: cap = 50 000 (получено {r_dd_cap['amount']})")
+    check(r_dd_cap["capped"] is True, "delivery: capped=True")
+
+    bc_dd = build_calculation(
+        "marketplace",
+        {"цена": "50000", "дата_обращения": "01.08.2026"},
+        today=today,
+        subtype="delivery_delay",
+    )
+    check(bc_dd is not None, "build delivery: не None")
+    check(bc_dd["penalty"] == 7500.0, "build delivery: penalty 7500")
+    check("23.1" in bc_dd["law"], "build delivery: law 23.1")
+
+    bc_mp = build_calculation(
+        "marketplace",
+        {"цена": "50000", "дата_обращения": "01.08.2026"},
+        today=today,
+    )
+    check(bc_mp is not None and bc_mp["penalty"] == 15000.0,
+          "build marketplace без subtype: 1% (15000)")
 
     print(f"\nTotal: {passed + failed}  Passed: {passed}  Failed: {failed}")
     raise SystemExit(1 if failed else 0)

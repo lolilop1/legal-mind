@@ -114,6 +114,32 @@ _PROBLEM_PATTERNS = [
 ]
 
 
+# ─── Подтипы маркетплейса ───
+_MARKETPLACE_SUBTYPES: tuple[tuple[str, str, str], ...] = (
+    (r"не\s+доставил|не\s+пришл|не\s+привез|не\s+получил\s+товар|"
+     r"просрочк|задержк|опаздыва|не\s+привезли|не\s+дошл|"
+     r"\bне\s+пришёл|\bне\s+пришло|не\s+пришла\s+посылк|"
+     r"месяц.*не\s+доставил|долго\s+жд|не\s+могу\s+дождаться",
+     "Просрочка доставки",
+     "ст. 23.1 — неустойка 0,5% за каждый день просрочки"),
+    (r"брак|дефект|сломал|не\s+работа|трещин|повреж|"
+     r"не\s+соответству|не\s+то\s+что\s+заказ",
+     "Товар с недостатком",
+     "ст. 26.1 + 18 — возврат/замена/ремонт"),
+    (r"ввёл.*заблужд|обман|не\s+та\s+информац|"
+     r"не\s+соответствует\s+описанию",
+     "Недостоверная информация",
+     "ст. 12 — возмещение убытков"),
+)
+
+
+def _detect_marketplace_subtype(problem: str) -> tuple[str, str] | None:
+    for pattern, label, hint in _MARKETPLACE_SUBTYPES:
+        if re.search(pattern, problem, re.IGNORECASE):
+            return label, hint
+    return None
+
+
 # ─── Подтипы услуги (ст. 27-33 ЗоЗПП) ───
 _SERVICE_SUBTYPES: tuple[tuple[str, str, str], ...] = (
     (r"просроч|позже|задерж|не в срок|срок.*наруш|обещал.*сдела|"
@@ -305,6 +331,13 @@ def run_consumer_pre_checks(user_data: dict, extras: dict | None = None,
             report, "Техсложный товар",
             "Да — учтены оговорки ст. 18 ЗоЗПП и Пост. 924"
         )
+
+    # ─── Подтип marketplace ───
+    if scenario == "marketplace":
+        subtype = _detect_marketplace_subtype(problem)
+        if subtype:
+            label, hint = subtype
+            add_known(report, "Подтип маркетплейса", f"{label} ({hint})")
 
     # ─── Подтип услуги (только для service) ───
     if scenario == "service":

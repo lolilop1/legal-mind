@@ -742,7 +742,16 @@ def submit():
         }
         extra_log = ""
     elif problem_type == "consumer":
-        calc = build_consumer_calc(consumer_scenario, user_data)
+        # Определяем подтип для калькулятора (пока только marketplace/delivery)
+        _calc_subtype = None
+        if consumer_scenario == "marketplace":
+            from modules.consumer.pre_checks import _detect_marketplace_subtype
+            _sub = _detect_marketplace_subtype(user_data.get("проблема", ""))
+            if _sub and _sub[0] == "Просрочка доставки":
+                _calc_subtype = "delivery_delay"
+        calc = build_consumer_calc(
+            consumer_scenario, user_data, subtype=_calc_subtype,
+        )
         normalized = {
             "описание_проблемы_формальное": parsed["описание_проблемы_формальное"],
             "требование": parsed.get("требование", ""),
