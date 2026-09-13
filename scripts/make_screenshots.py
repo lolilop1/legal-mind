@@ -121,7 +121,7 @@ def main() -> int:
         print(f"OK: 01_home_step1.png")
 
         # 2. Consumer-поля на шаге 2
-        page.select_option("select[name='problem_type']", "consumer")
+        page.click("label.type-card:has(input[value='consumer'])")
         time.sleep(0.2)
         page.fill("textarea[name='проблема']",
                   "купил в М.Видео смартфон Samsung, через неделю перестал включаться")
@@ -178,7 +178,7 @@ def main() -> int:
         mp.screenshot(path=str(OUT / "05_mobile_home.png"), full_page=True)
         print(f"OK: 05_mobile_home.png")
 
-        mp.select_option("select[name='problem_type']", "consumer")
+        mp.click("label.type-card:has(input[value='consumer'])")
         time.sleep(0.2)
         mp.fill("textarea[name='проблема']",
                 "купил смартфон, сломался, хочу вернуть")

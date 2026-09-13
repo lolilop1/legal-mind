@@ -119,8 +119,8 @@ def main():
         page.goto(_BASE, wait_until="networkidle")
         html = page.content()
         check("Legal Mind" in html, "UI: главная содержит 'Legal Mind'")
-        check(page.locator("select[name='problem_type']").count() == 1,
-              "UI: dropdown типа проблемы")
+        check(page.locator("input[name='problem_type']").count() == 3,
+              "UI: 3 карточки типа проблемы")
         check(page.locator("textarea[name='проблема']").count() == 1,
               "UI: textarea проблемы")
         check(page.locator(".wizard-progress-step").count() == 3,
@@ -141,7 +141,7 @@ def main():
         # ═══ 3. Возврат на шаг 1, смена на consumer ═══
         page.click("button.wizard-prev")
         time.sleep(0.3)
-        page.select_option("select[name='problem_type']", "consumer")
+        page.click("label.type-card:has(input[value='consumer'])")
         time.sleep(0.2)
         page.click("button.wizard-next")
         time.sleep(0.3)
@@ -208,7 +208,7 @@ def main():
 
         # ═══ 8б. Поля 'Текущая цена' и 'Номер заказа' ═══
         page.goto(_BASE, wait_until="networkidle")
-        page.select_option("select[name='problem_type']", "consumer")
+        page.click("label.type-card:has(input[value='consumer'])")
         time.sleep(0.2)
         page.fill("textarea[name='проблема']",
                   "купил смартфон, сломался, хочу вернуть деньги")

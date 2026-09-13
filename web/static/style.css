@@ -2,31 +2,39 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  background: #f4f6f8;
+  background: linear-gradient(180deg, #f4f6f8 0%, #eef1f6 100%);
+  min-height: 100vh;
   color: #1a1a1a;
   margin: 0;
-  padding: 20px;
-  line-height: 1.5;
+  padding: 32px 20px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
 
 .container {
   max-width: 680px;
   margin: 0 auto;
   background: #fff;
-  padding: 32px;
-  border-radius: 10px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 36px 40px;
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgba(15, 30, 60, 0.04),
+    0 8px 24px rgba(15, 30, 60, 0.06),
+    0 24px 48px rgba(15, 30, 60, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 h1 {
-  font-size: 26px;
-  margin: 0 0 4px 0;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px 0;
 }
 
 .subtitle {
   color: #666;
-  margin: 0 0 24px 0;
-  font-size: 14px;
+  margin: 0 0 28px 0;
+  font-size: 15px;
 }
 
 .disclaimer {
@@ -50,17 +58,25 @@ form input,
 form select,
 form textarea {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ccd2d8;
-  border-radius: 6px;
+  padding: 12px 14px;
+  border: 1.5px solid #d8dee6;
+  border-radius: 10px;
   font-size: 15px;
   font-family: inherit;
   background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+form input:hover,
+form select:hover,
+form textarea:hover {
+  border-color: #b9c3d0;
 }
 
 form textarea {
   resize: vertical;
-  min-height: 90px;
+  min-height: 100px;
+  line-height: 1.5;
 }
 
 form input:focus,
@@ -68,25 +84,44 @@ form select:focus,
 form textarea:focus {
   outline: none;
   border-color: #2f6df5;
-  box-shadow: 0 0 0 3px rgba(47,109,245,0.15);
+  box-shadow: 0 0 0 4px rgba(47,109,245,0.12);
+  background: #fbfcff;
+}
+
+form label {
+  display: block;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #2b3440;
+  letter-spacing: -0.005em;
 }
 
 button {
   margin-top: 24px;
   width: 100%;
-  padding: 14px;
-  background: #2f6df5;
+  padding: 15px;
+  background: linear-gradient(180deg, #3f7bf7 0%, #2f6df5 100%);
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: transform 0.08s, box-shadow 0.15s, filter 0.15s;
+  box-shadow: 0 2px 8px rgba(47,109,245,0.25);
+  letter-spacing: -0.005em;
 }
 
 button:hover {
-  background: #1f55d0;
+  filter: brightness(1.05);
+  box-shadow: 0 4px 14px rgba(47,109,245,0.35);
+}
+
+button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 4px rgba(47,109,245,0.2);
 }
 
 .emergency {
@@ -1135,4 +1170,244 @@ textarea::placeholder {
 /* Убедимся что календарь поверх всего внутри карточки */
 .air-datepicker.-active- {
   opacity: 1 !important;
+}
+
+
+/* ═══ Hero-секция ═══ */
+.hero {
+  text-align: center;
+  margin: 8px 0 24px 0;
+}
+
+.hero-title {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0 0 12px 0;
+  color: #0f1a2b;
+}
+
+.hero-accent {
+  background: linear-gradient(135deg, #3f7bf7 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 16px;
+  color: #5a6472;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+.hero-features {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.hero-feature {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #5a6472;
+  font-weight: 500;
+}
+
+.hero-feature-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ═══ Карточки выбора типа проблемы ═══ */
+.type-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 18px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
+  margin: 0 !important;
+  position: relative;
+}
+
+.type-card:hover {
+  border-color: #b9c9e8;
+  background: #fbfcff;
+  transform: translateY(-1px);
+}
+
+.type-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.type-card-active {
+  border-color: #2f6df5;
+  background: linear-gradient(180deg, #f5f9ff 0%, #eef4ff 100%);
+  box-shadow: 0 4px 12px rgba(47,109,245,0.12);
+}
+
+.type-card-active::after {
+  content: "✓";
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  background: #2f6df5;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.type-card-icon {
+  font-size: 28px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.type-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.type-card-desc {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.35;
+}
+
+/* Три колонки на десктопе */
+@media (min-width: 600px) {
+  .type-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .type-card {
+    padding: 20px 12px;
+  }
+}
+
+
+/* ═══ Секции формы (шаг 2) ═══ */
+.form-section {
+  background: #fafbfd;
+  border: 1px solid #eef1f6;
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  transition: border-color 0.15s;
+}
+
+.form-section:focus-within {
+  border-color: #c9d8f5;
+  background: #fbfcff;
+}
+
+.form-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.form-section-icon {
+  font-size: 22px;
+  line-height: 1;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.form-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.form-section-sub {
+  font-size: 12.5px;
+  color: #7a8493;
+  line-height: 1.4;
+}
+
+.form-section label {
+  margin-top: 14px;
+  font-size: 13.5px;
+}
+
+.form-section label:first-of-type {
+  margin-top: 4px;
+}
+
+/* Двойная колонка для коротких полей */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.form-row label {
+  margin-top: 0;
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .form-row > div {
+    margin-bottom: 8px;
+  }
+  .form-section {
+    padding: 16px 16px;
+  }
+}
+
+/* Hint и required в label */
+.label-hint {
+  color: #9aa3b2;
+  font-weight: 400;
+  font-size: 12.5px;
+}
+
+.label-required {
+  color: #d32f2f;
+  font-weight: 700;
 }

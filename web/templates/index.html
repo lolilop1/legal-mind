@@ -23,7 +23,24 @@
     </div>
   </div>
 
-  <p class="subtitle">Составление юридического документа за 1 минуту</p>
+  <div class="hero">
+    <h1 class="hero-title">Юридический документ<br><span class="hero-accent">за 1 минуту</span></h1>
+    <p class="hero-sub">Опишите проблему обычными словами — мы превратим её в готовую претензию или заявление в PDF</p>
+    <div class="hero-features">
+      <div class="hero-feature">
+        <span class="hero-feature-icon">✓</span>
+        <span>Без юриста</span>
+      </div>
+      <div class="hero-feature">
+        <span class="hero-feature-icon">✓</span>
+        <span>Бесплатно</span>
+      </div>
+      <div class="hero-feature">
+        <span class="hero-feature-icon">✓</span>
+        <span>Со ссылками на законы</span>
+      </div>
+    </div>
+  </div>
 
   <div class="disclaimer">
     <strong>Не является юридической услугой.</strong>
@@ -63,12 +80,33 @@
 
     <!-- ═══ ШАГ 1 ═══ -->
     <div class="wizard-step" data-step="1">
-      <label>Тип проблемы</label>
-      <select name="problem_type" required onchange="lmOnTypeChange(this.value)">
-        <option value="uk" {% if form_data and form_data.get('problem_type') == 'uk' %}selected{% endif %}>Проблема с управляющей компанией (уборка, отопление, лифт, крыша)</option>
-        <option value="noise" {% if form_data and form_data.get('problem_type') == 'noise' %}selected{% endif %}>Нарушение тишины (музыка, ремонт, крики, лай собаки)</option>
-        <option value="consumer" {% if form_data and form_data.get('problem_type') == 'consumer' %}selected{% endif %}>Защита прав потребителя (товар, услуга, маркетплейс)</option>
-      </select>
+      <label>Что случилось?</label>
+      <div class="type-cards">
+        <label class="type-card {% if not form_data or form_data.get('problem_type') == 'uk' %}type-card-active{% endif %}">
+          <input type="radio" name="problem_type" value="uk"
+                 {% if not form_data or form_data.get('problem_type') == 'uk' %}checked{% endif %}
+                 onchange="lmOnTypeChange('uk')">
+          <span class="type-card-icon">🏠</span>
+          <span class="type-card-title">Проблема с УК</span>
+          <span class="type-card-desc">Уборка, отопление, лифт, крыша, домофон</span>
+        </label>
+        <label class="type-card {% if form_data and form_data.get('problem_type') == 'noise' %}type-card-active{% endif %}">
+          <input type="radio" name="problem_type" value="noise"
+                 {% if form_data and form_data.get('problem_type') == 'noise' %}checked{% endif %}
+                 onchange="lmOnTypeChange('noise')">
+          <span class="type-card-icon">🔊</span>
+          <span class="type-card-title">Нарушение тишины</span>
+          <span class="type-card-desc">Музыка, ремонт, крики, лай собаки</span>
+        </label>
+        <label class="type-card {% if form_data and form_data.get('problem_type') == 'consumer' %}type-card-active{% endif %}">
+          <input type="radio" name="problem_type" value="consumer"
+                 {% if form_data and form_data.get('problem_type') == 'consumer' %}checked{% endif %}
+                 onchange="lmOnTypeChange('consumer')">
+          <span class="type-card-icon">🛒</span>
+          <span class="type-card-title">Потребитель</span>
+          <span class="type-card-desc">Товар, услуга, маркетплейс, возврат</span>
+        </label>
+      </div>
 
       <label>Опишите проблему</label>
       <textarea name="проблема" rows="5" required placeholder="Например: в подъезде не убирают уже две недели, грязь и мусор в углах">{{ form_data.get('проблема', '') if form_data else '' }}</textarea>
@@ -81,48 +119,102 @@
 
     <!-- ═══ ШАГ 2 ═══ -->
     <div class="wizard-step" data-step="2" style="display: none;">
-      <!-- Ваш адрес (для ответа) — нужен всем -->
-      <label>Ваш адрес</label>
-      <input type="text" name="адрес" required placeholder="г. Москва, ул. Ленина, д. 15, кв. 42" value="{{ form_data.get('адрес', '') if form_data else '' }}">
 
-      <!-- UK / noise -->
-      <div id="uk-noise-fields" {% if form_data and form_data.get('problem_type') == 'consumer' %}style="display: none;"{% endif %}>
-        <label>Когда началось</label>
+      <!-- ─── Секция: Ваш адрес ─── -->
+      <div class="form-section">
+        <div class="form-section-head">
+          <span class="form-section-icon">📍</span>
+          <div>
+            <div class="form-section-title">Ваш адрес</div>
+            <div class="form-section-sub">Куда направить ответ</div>
+          </div>
+        </div>
+        <input type="text" name="адрес" required placeholder="г. Москва, ул. Ленина, д. 15, кв. 42" value="{{ form_data.get('адрес', '') if form_data else '' }}">
+      </div>
+
+      <!-- ─── Секция: UK / noise ─── -->
+      <div id="uk-noise-fields" class="form-section" {% if form_data and form_data.get('problem_type') == 'consumer' %}style="display: none;"{% endif %}>
+        <div class="form-section-head">
+          <span class="form-section-icon">🕐</span>
+          <div>
+            <div class="form-section-title">Когда это началось</div>
+            <div class="form-section-sub">Помогает усилить жалобу</div>
+          </div>
+        </div>
+        <label>Дата начала</label>
         <input type="text" name="дата_начала" placeholder="например: около двух недель назад" value="{{ form_data.get('дата_начала', '') if form_data else '' }}">
 
         <label>Обращались ли ранее</label>
         <input type="text" name="обращались_ранее" placeholder="например: да, 01.08.2026, ответа не было" value="{{ form_data.get('обращались_ранее', '') if form_data else '' }}">
       </div>
 
-      <!-- Consumer -->
+      <!-- ─── Секция: Продавец ─── -->
       <div id="consumer-only-fields" {% if not (form_data and form_data.get('problem_type') == 'consumer') %}style="display: none;"{% endif %}>
-        <label>Продавец / исполнитель</label>
-        <input type="text" name="продавец" placeholder="ООО «М.Видео», Wildberries, ИП Иванов, самозанятый Петров" value="{{ form_data.get('продавец', '') if form_data else '' }}">
 
-        <label>Адрес продавца</label>
-        <input type="text" name="адрес_продавца" placeholder="Для ООО/ИП обязателен. Для физлица можно оставить пустым" value="{{ form_data.get('адрес_продавца', '') if form_data else '' }}">
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="form-section-icon">🏢</span>
+            <div>
+              <div class="form-section-title">Продавец</div>
+              <div class="form-section-sub">Кому направляем претензию</div>
+            </div>
+          </div>
 
-        <div id="seller-link-field" style="display: none;">
-          <label>Ссылка на профиль/объявление <span style="color:#888; font-weight:400;">(если знаете)</span></label>
-          <input type="text" name="ссылка_продавца" placeholder="Ссылка на ПРОФИЛЬ продавца (не на товар): https://www.avito.ru/user/... или @nickname" value="{{ form_data.get('ссылка_продавца', '') if form_data else '' }}">
+          <label>Название</label>
+          <input type="text" name="продавец" placeholder="ООО «М.Видео», Wildberries, ИП Иванов, самозанятый Петров" value="{{ form_data.get('продавец', '') if form_data else '' }}">
+
+          <label>Адрес</label>
+          <input type="text" name="адрес_продавца" placeholder="Для ООО/ИП обязателен. Для физлица можно оставить пустым" value="{{ form_data.get('адрес_продавца', '') if form_data else '' }}">
+
+          <div id="seller-link-field" style="display: none;">
+            <label>Ссылка на профиль <span class="label-hint">(если знаете)</span></label>
+            <input type="text" name="ссылка_продавца" placeholder="https://www.avito.ru/user/... или @nickname" value="{{ form_data.get('ссылка_продавца', '') if form_data else '' }}">
+          </div>
+
+          <div id="order-number-field" style="display: none;">
+            <label>Номер заказа <span class="label-required">*</span></label>
+            <input type="text" name="номер_заказа" id="order-number-input" placeholder="Номер заказа с маркетплейса" value="{{ form_data.get('номер_заказа', '') if form_data else '' }}">
+          </div>
         </div>
 
-        <div id="order-number-field" style="display: none;">
-          <label>Номер заказа <span style="color:#d32f2f;">*</span></label>
-          <input type="text" name="номер_заказа" id="order-number-input" placeholder="Номер заказа с маркетплейса" value="{{ form_data.get('номер_заказа', '') if form_data else '' }}">
+        <!-- ─── Секция: Товар ─── -->
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="form-section-icon">🛍️</span>
+            <div>
+              <div class="form-section-title">Товар или услуга</div>
+              <div class="form-section-sub">Цена нужна для расчёта неустойки</div>
+            </div>
+          </div>
+
+          <label>Дата покупки</label>
+          <input type="text" name="дата_покупки" id="date-purchase" placeholder="10.09.2026" value="{{ form_data.get('дата_покупки', '') if form_data else '' }}">
+
+          <div class="form-row">
+            <div>
+              <label>Цена</label>
+              <input type="text" name="цена" placeholder="50 000" value="{{ form_data.get('цена', '') if form_data else '' }}">
+            </div>
+            <div>
+              <label>Текущая цена <span class="label-hint">(если подорожал)</span></label>
+              <input type="text" name="текущая_цена" placeholder="60 000" value="{{ form_data.get('текущая_цена', '') if form_data else '' }}">
+            </div>
+          </div>
         </div>
 
-        <label>Дата покупки</label>
-        <input type="text" name="дата_покупки" id="date-purchase" placeholder="10.09.2026" value="{{ form_data.get('дата_покупки', '') if form_data else '' }}">
+        <!-- ─── Секция: Дата обращения ─── -->
+        <div class="form-section">
+          <div class="form-section-head">
+            <span class="form-section-icon">📅</span>
+            <div>
+              <div class="form-section-title">Когда предъявили требование</div>
+              <div class="form-section-sub">От этой даты считаем неустойку (10 дней на ответ)</div>
+            </div>
+          </div>
 
-        <label>Цена товара/услуги <span style="color:#888; font-weight:400;">(для расчёта неустойки, если знаете)</span></label>
-        <input type="text" name="цена" placeholder="Например: 50 000" value="{{ form_data.get('цена', '') if form_data else '' }}">
+          <input type="text" name="дата_обращения" id="date-demand" placeholder="01.08.2026" value="{{ form_data.get('дата_обращения', '') if form_data else '' }}">
+        </div>
 
-        <label>Текущая цена <span style="color:#888; font-weight:400;">(если товар уже подорожал, ст. 24 ЗоЗПП)</span></label>
-        <input type="text" name="текущая_цена" placeholder="Например: 60 000" value="{{ form_data.get('текущая_цена', '') if form_data else '' }}">
-
-        <label>Дата обращения к продавцу <span style="color:#888; font-weight:400;">(когда предъявили требование)</span></label>
-        <input type="text" name="дата_обращения" id="date-demand" placeholder="01.08.2026" value="{{ form_data.get('дата_обращения', '') if form_data else '' }}">
       </div>
 
       <div class="wizard-nav">
@@ -177,7 +269,23 @@ window.lmOnTypeChange = function(val) {
   if (cf)  cf.style.display  = isC ? 'block' : 'none';
   if (unf) unf.style.display = isC ? 'none'  : 'block';
   if (of)  of.style.display  = isC ? 'none'  : 'block';
+
+  // Подсветка выбранной карточки
+  document.querySelectorAll('.type-card').forEach(function(card) {
+    var radio = card.querySelector('input[type="radio"]');
+    if (radio && radio.value === val) {
+      card.classList.add('type-card-active');
+    } else {
+      card.classList.remove('type-card-active');
+    }
+  });
 };
+
+// Хелпер: получить текущее значение problem_type
+function lmGetProblemType() {
+  var checked = document.querySelector('input[name="problem_type"]:checked');
+  return checked ? checked.value : 'uk';
+}
 
 (function() {
   var form = document.getElementById('main-form');
@@ -245,14 +353,13 @@ window.lmOnTypeChange = function(val) {
     }
 
     if (n === 1) {
-      var typeSel = step.querySelector('select[name="problem_type"]');
       var problem = step.querySelector('textarea[name="проблема"]');
       if (!problem.value.trim()) fail(problem, 'Опишите проблему — без этого мы не поймём, что нужно составить');
       else if (problem.value.trim().length < 10) fail(problem, 'Слишком короткое описание — добавьте деталей');
     }
 
     if (n === 2) {
-      var type = form.querySelector('select[name="problem_type"]').value;
+      var type = lmGetProblemType();
       var addr = step.querySelector('input[name="адрес"]');
       if (!addr.value.trim()) fail(addr, 'Укажите ваш адрес — он нужен в шапке документа');
 
@@ -390,8 +497,7 @@ window.lmOnTypeChange = function(val) {
   });
 
   // Инициализация видимости полей по типу
-  var typeSel = form.querySelector('select[name="problem_type"]');
-  if (typeSel) window.lmOnTypeChange(typeSel.value);
+  window.lmOnTypeChange(lmGetProblemType());
 
   // Определяем стартовый шаг
   if (hasErrors) {
