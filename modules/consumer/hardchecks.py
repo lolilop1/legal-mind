@@ -16,6 +16,7 @@ import re
 from typing import Optional
 
 from modules.consumer.marketplaces import MARKETPLACES, resolve_marketplace
+from modules.consumer.seller_kind import is_legal_entity
 
 
 _ALPHABET_RE = re.compile(r"[A-Za-zА-Яа-яЁё]")
@@ -262,30 +263,5 @@ def _match_non_returnable(problem: str) -> str | None:
     return None
 
 
-_LEGAL_PREFIXES = ("ООО", "АО", "ПАО", "ЗАО", "ОАО", "НКО",
-                   "МУП", "ГУП", "ТСЖ", "ТД", "ТЦ")
-
-
-def _is_legal_entity(seller: str) -> bool:
-    """True если продавец похож на организацию, ИП или самозанятого."""
-    s = (seller or "").strip().lower()
-    if not s:
-        return True  # пусто → требуем адрес (консервативно)
-
-    upper = s.upper()
-    for prefix in _LEGAL_PREFIXES:
-        if upper.startswith(prefix + " ") or upper.startswith(prefix + "."):
-            return True
-
-    if upper.startswith("ИП ") or upper.startswith("ИП."):
-        return True
-
-    if "самозанят" in s:
-        return True
-
-    # Известные маркетплейсы — юрлица
-    if any(m in s for m in _KNOWN_MARKETPLACES):
-        return True
-
-    # Физлицо без статуса
-    return False
+# _is_legal_entity — алиас на общую функцию в seller_kind (единая точка правды)
+_is_legal_entity = is_legal_entity

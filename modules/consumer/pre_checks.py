@@ -15,6 +15,7 @@ import datetime as _dt
 import re
 
 from modules.consumer.marketplaces import resolve_marketplace
+from modules.consumer.seller_kind import is_legal_entity
 
 from core.pre_checks import (
     PreCheckReport,
@@ -392,27 +393,8 @@ _KNOWN_MARKETPLACES_PRE = tuple(
 )
 
 
-_LEGAL_PREFIXES_PRE = ("ООО", "АО", "ПАО", "ЗАО", "ОАО", "НКО",
-                        "МУП", "ГУП", "ТСЖ", "ТД", "ТЦ")
-
-
-def _is_legal_entity_pre(seller: str) -> bool:
-    """True если продавец похож на организацию, ИП или самозанятого."""
-    s = (seller or "").strip()
-    if not s:
-        return True
-    upper = s.upper()
-    for prefix in _LEGAL_PREFIXES_PRE:
-        if upper.startswith(prefix + " ") or upper.startswith(prefix + "."):
-            return True
-    if upper.startswith("ИП ") or upper.startswith("ИП."):
-        return True
-    if "самозанят" in s.lower():
-        return True
-    s_low = s.lower()
-    if any(m in s_low for m in _KNOWN_MARKETPLACES_PRE):
-        return True
-    return False
+# _is_legal_entity_pre — алиас на общую функцию из seller_kind
+_is_legal_entity_pre = is_legal_entity
 
 
 def run_consumer_pre_checks(user_data: dict, extras: dict | None = None,

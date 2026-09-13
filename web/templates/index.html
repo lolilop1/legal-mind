@@ -463,6 +463,8 @@ window.lmOnTypeChange = function(val) {
   var sellerLinkField = document.getElementById('seller-link-field');
   var sellerAddressInput = form.querySelector('input[name="адрес_продавца"]');
 
+  // ВАЖНО: синхронизировано вручную с modules/consumer/seller_kind.py
+  // (функция is_legal_entity). При правке — обновляй ОБА места.
   function lmIsLegalEntity(s) {
     if (!s) return true;
     var upper = s.toUpperCase();

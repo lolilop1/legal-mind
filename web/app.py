@@ -45,7 +45,8 @@ from modules.noise.pre_checks import run_noise_pre_checks
 from modules.consumer.engine import process_consumer
 from modules.consumer.pre_checks import run_consumer_pre_checks
 from modules.consumer.pdf import generate_pdf as pdf_consumer
-from modules.consumer.hardchecks import hard_pre_check as hardcheck_consumer, _is_legal_entity
+from modules.consumer.hardchecks import hard_pre_check as hardcheck_consumer
+from modules.consumer.seller_kind import is_legal_entity as _is_legal_entity
 from modules.consumer import configs as consumer_configs
 from modules.consumer.marketplaces import resolve_marketplace
 from modules.consumer.calculators import build_calculation as build_consumer_calc
