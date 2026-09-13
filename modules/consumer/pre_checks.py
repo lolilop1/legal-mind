@@ -114,6 +114,34 @@ _PROBLEM_PATTERNS = [
 ]
 
 
+# ─── Подтипы услуги (ст. 27-33 ЗоЗПП) ───
+_SERVICE_SUBTYPES: tuple[tuple[str, str, str], ...] = (
+    (r"просроч|позже|задерж|не в срок|срок.*наруш|обещал.*сдела|"
+     r"должен был|опаздыва|затягив|не уложились?",
+     "Нарушен срок выполнения",
+     "ст. 27, 28 — неустойка 3% за каждый день просрочки"),
+    (r"смет|дороже|доплати|превысил|не согласов|больше чем|"
+     r"сказали.*стоить|оплатил.*дороже",
+     "Смета превышена без согласования",
+     "ст. 33 — исполнитель не вправе требовать доплату без согласования"),
+    (r"отказ|передумал|не нужн|хочу отказ|больше не надо|"
+     r"расторгнуть|вернуть.*деньги.*услуг",
+     "Отказ от услуги",
+     "ст. 32 — возврат минус фактические расходы исполнителя"),
+    (r"некачествен|плохо|халтур|дефект|отклеива|"
+     r"не выполн|испортил|брак",
+     "Работа выполнена некачественно",
+     "ст. 29, 30 — безвозмездное устранение или возврат"),
+)
+
+
+def _detect_service_subtype(problem: str) -> tuple[str, str] | None:
+    for pattern, label, hint in _SERVICE_SUBTYPES:
+        if re.search(pattern, problem, re.IGNORECASE):
+            return label, hint
+    return None
+
+
 # ─── Дата покупки ───
 _DATE_PATTERN = re.compile(
     r"\b\d{1,2}[.\-/]\d{1,2}[.\-/]\d{2,4}\b"
@@ -277,6 +305,13 @@ def run_consumer_pre_checks(user_data: dict, extras: dict | None = None,
             report, "Техсложный товар",
             "Да — учтены оговорки ст. 18 ЗоЗПП и Пост. 924"
         )
+
+    # ─── Подтип услуги (только для service) ───
+    if scenario == "service":
+        subtype = _detect_service_subtype(problem)
+        if subtype:
+            label, hint = subtype
+            add_known(report, "Подтип услуги", f"{label} ({hint})")
 
     # Суть проблемы
     problem_kind = _match_first(problem, _PROBLEM_PATTERNS)
