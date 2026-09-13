@@ -1,5 +1,8 @@
 # Legal Mind
 
+[![Tests](https://github.com/lolilop1/legal-mind/actions/workflows/test.yml/badge.svg)](https://github.com/lolilop1/legal-mind/actions/workflows/test.yml)
+[![Deploy](https://github.com/lolilop1/legal-mind/actions/workflows/deploy.yml/badge.svg)](https://github.com/lolilop1/legal-mind/actions/workflows/deploy.yml)
+
 Веб-сервис для физических лиц. Превращает неформальное описание бытовой проблемы в готовый юридический документ (PDF).
 
 **Работает:** http://201.24.49.121/
