@@ -12,10 +12,17 @@ from unittest.mock import MagicMock, patch
 
 
 # ═══ Готовим env ДО импорта ═══
-os.environ.setdefault("YANDEX_API_KEY", "test-key")
-os.environ.setdefault("YANDEX_FOLDER_ID", "test-folder")
+# ВАЖНО: используем прямое присваивание, НЕ setdefault —
+# в CI YANDEX_API_KEY="" (пустой), а setdefault не перезаписывает.
+os.environ["YANDEX_API_KEY"] = "test-key"
+os.environ["YANDEX_FOLDER_ID"] = "test-folder"
 
 import core.llm as llm
+
+# Страховка: если load_dotenv из web/.env перезаписал наши значения
+# (в CI файла нет, локально может быть) — принудительно ставим наши.
+llm.API_KEY = "test-key"
+llm.FOLDER = "test-folder"
 
 
 def main():
@@ -103,7 +110,9 @@ def main():
     # ═══ 6. Модели в URL ═══
     fake_client_url = MagicMock()
     fake_client_url.responses.create.return_value = fake_resp
-    with patch.object(llm, "_get_client", return_value=fake_client_url):
+    with patch.object(llm, "_get_client", return_value=fake_client_url), \
+         patch.object(llm, "API_KEY", "k"), \
+         patch.object(llm, "FOLDER", "f"):
         llm.call_alice_flash("i", "u")
         args, kwargs = fake_client_url.responses.create.call_args
         model_used = kwargs.get("model", "")
