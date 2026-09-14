@@ -9,6 +9,7 @@ Uses OpenAI-compatible Responses API.
 
 import logging
 import os
+import time
 
 import openai
 from dotenv import load_dotenv
@@ -25,6 +26,24 @@ API_KEY = os.getenv("YANDEX_API_KEY", "")
 BASE_URL = "https://ai.api.cloud.yandex.net/v1"
 
 log = logging.getLogger("legal_mind")
+
+# ─── Retry настройки ───
+MAX_RETRIES = 3
+RETRY_BACKOFF = (1.0, 2.0, 4.0)
+
+_NO_RETRY_ERRORS = (
+    openai.AuthenticationError,
+    openai.BadRequestError,
+    openai.NotFoundError,
+    openai.PermissionDeniedError,
+)
+
+_RETRY_ERRORS = (
+    openai.APITimeoutError,
+    openai.APIConnectionError,
+    openai.RateLimitError,
+    openai.InternalServerError,
+)
 
 _client = None
 
@@ -49,17 +68,50 @@ def _call(model_short: str, instructions: str, user_input: str,
     client = _get_client()
     model_uri = f"gpt://{FOLDER}/{model_short}/latest"
 
-    try:
-        response = client.responses.create(
-            model=model_uri,
-            temperature=temperature,
-            instructions=instructions,
-            input=user_input,
-            max_output_tokens=max_tokens,
-        )
-    except Exception as e:
-        log.warning("Alice AI (%s) error: %s", model_short, e)
-        return {"error": f"{type(e).__name__}: {e}"}
+    response = None
+    last_error = None
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = client.responses.create(
+                model=model_uri,
+                temperature=temperature,
+                instructions=instructions,
+                input=user_input,
+                max_output_tokens=max_tokens,
+            )
+            if attempt > 0:
+                log.info("Alice AI (%s): успех с попытки %d", model_short, attempt + 1)
+            break
+        except _NO_RETRY_ERRORS as e:
+            log.warning("Alice AI (%s) client error: %s", model_short, e)
+            return {"error": f"{type(e).__name__}: {e}"}
+        except _RETRY_ERRORS as e:
+            last_error = e
+            if attempt < MAX_RETRIES - 1:
+                wait = RETRY_BACKOFF[attempt]
+                log.warning(
+                    "Alice AI (%s) retry %d/%d через %.1f с: %s",
+                    model_short, attempt + 1, MAX_RETRIES, wait, e,
+                )
+                time.sleep(wait)
+            else:
+                log.warning("Alice AI (%s) все %d попыток провалились: %s",
+                            model_short, MAX_RETRIES, e)
+        except Exception as e:
+            last_error = e
+            if attempt < MAX_RETRIES - 1:
+                wait = RETRY_BACKOFF[attempt]
+                log.warning(
+                    "Alice AI (%s) unknown retry %d/%d через %.1f с: %s",
+                    model_short, attempt + 1, MAX_RETRIES, wait, e,
+                )
+                time.sleep(wait)
+            else:
+                log.warning("Alice AI (%s) все попытки: %s", model_short, e)
+
+    if response is None:
+        return {"error": f"{type(last_error).__name__}: {last_error}"}
 
     try:
         text = response.output_text

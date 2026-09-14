@@ -10,6 +10,8 @@ import os
 import sys
 from unittest.mock import MagicMock, patch
 
+import httpx
+
 
 # ═══ Готовим env ДО импорта ═══
 # ВАЖНО: используем прямое присваивание, НЕ setdefault —
@@ -23,6 +25,9 @@ import core.llm as llm
 # (в CI файла нет, локально может быть) — принудительно ставим наши.
 llm.API_KEY = "test-key"
 llm.FOLDER = "test-folder"
+
+# Отключаем sleep в retry — иначе тесты тормозят на 3+ сек
+llm.time.sleep = lambda s: None
 
 
 def main():
@@ -137,6 +142,69 @@ def main():
             check(c is not None, "_get_client возвращает клиента")
         except Exception as e:
             check(False, f"_get_client падает: {e}")
+
+    # ═══ 9. Retry: успех после 2 неудач ═══
+    _c9 = {"n": 0}
+    def _fail_twice(*a, **kw):
+        _c9["n"] += 1
+        if _c9["n"] < 3:
+            raise llm.openai.APITimeoutError(
+                request=httpx.Request("POST", "http://test")
+            )
+        return fake_resp
+
+    fc9 = MagicMock()
+    fc9.responses.create.side_effect = _fail_twice
+    with patch.object(llm, "_get_client", return_value=fc9):
+        r = llm.call_alice_flash("i", "u")
+        check("error" not in r, "retry: успех после 2 неудач")
+        check(r.get("text") == '{"описание_проблемы_формальное": "test"}',
+              "retry: текст получен после retry")
+        check(_c9["n"] == 3, f"retry: 3 вызова (получено {_c9['n']})")
+
+    # ═══ 10. Retry: клиентская ошибка (401) НЕ ретраится ═══
+    _c10 = {"n": 0}
+    def _client_error(*a, **kw):
+        _c10["n"] += 1
+        resp401 = httpx.Response(401, request=httpx.Request("POST", "http://test"))
+        raise llm.openai.AuthenticationError("bad key", response=resp401, body=None)
+
+    fc10 = MagicMock()
+    fc10.responses.create.side_effect = _client_error
+    with patch.object(llm, "_get_client", return_value=fc10):
+        r = llm.call_alice_flash("i", "u")
+        check("error" in r, "retry: 401 → error")
+        check(_c10["n"] == 1, f"retry: 401 без повторов (вызовов {_c10['n']})")
+
+    # ═══ 11. Retry: 3 раза падает → error, 3 вызова ═══
+    _c11 = {"n": 0}
+    def _always_timeout(*a, **kw):
+        _c11["n"] += 1
+        raise llm.openai.APITimeoutError(
+            request=httpx.Request("POST", "http://test")
+        )
+
+    fc11 = MagicMock()
+    fc11.responses.create.side_effect = _always_timeout
+    with patch.object(llm, "_get_client", return_value=fc11):
+        r = llm.call_alice_flash("i", "u")
+        check("error" in r, "retry: всё упало → error")
+        check(_c11["n"] == 3, f"retry: 3 попытки (получено {_c11['n']})")
+        check("APITimeoutError" in r["error"],
+              f"retry: тип ошибки (получено {r['error'][:60]})")
+
+    # ═══ 12. Retry: успех с 1-го раза — 1 вызов ═══
+    _c12 = {"n": 0}
+    def _success_once(*a, **kw):
+        _c12["n"] += 1
+        return fake_resp
+
+    fc12 = MagicMock()
+    fc12.responses.create.side_effect = _success_once
+    with patch.object(llm, "_get_client", return_value=fc12):
+        r = llm.call_alice_flash("i", "u")
+        check("error" not in r, "retry: успех с 1-го раза")
+        check(_c12["n"] == 1, f"retry: 1 вызов (получено {_c12['n']})")
 
     print(f"\nTotal: {passed + failed}  Passed: {passed}  Failed: {failed}")
     raise SystemExit(1 if failed else 0)
