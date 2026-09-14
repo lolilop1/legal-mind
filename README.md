@@ -86,7 +86,7 @@ Python 3.12+, Flask, gunicorn, nginx, systemd, fpdf2, pypdf, pymorphy3, Alice AI
   - `consumer/calculators.py` — калькулятор неустойки
 - `web/` — Flask, шаблоны, статика
 - `scripts/` — утилиты + smoke-тест
-- `tests/` — 24 файла, 762 проверок
+- `tests/` — 25 файлов, 762 проверок
 - `docs/` — документация
 - `deploy/` — инфраструктура
 

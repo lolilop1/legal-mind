@@ -1,4 +1,4 @@
-﻿"""Legal Mind — Module 1: consumer rights complaint engine.
+"""Legal Mind — Module 1: consumer rights complaint engine.
 
 Один движок для всех 4 сценариев (defect, return14, marketplace, service).
 Читает CONFIG, строит промпт, гонит через LLM, валидирует ответ.
@@ -138,6 +138,16 @@ def process_consumer(user_data: dict, scenario: str) -> dict:
             "message": f"Модель использовала недопустимые нормы: {bad}",
             "retried": False,
         }
+
+    # ─── Валидация: хотя бы одна якорная норма ───
+    anchor_norms = config.get("anchor_norms", [])
+    if anchor_norms:
+        anchors_set = set(anchor_norms)
+        if not (got & anchors_set):
+            # LLM не вернула ни одной якорной нормы — добавляем первую вручную
+            fallback = anchor_norms[0]
+            parsed["применимые_нормы"] = [fallback] + list(parsed["применимые_нормы"])
+            parsed["_anchor_fallback"] = True
 
     # ─── Валидация: непустое описание ───
     if not parsed["описание_проблемы_формальное"].strip():
