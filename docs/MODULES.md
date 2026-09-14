@@ -2,7 +2,7 @@
 
 ## Модуль 2 — Документы по ЖКХ
 
-**Что делает:** 106 типов документов — от жалобы в УК до исков и жалоб в надзорные органы.
+**Что делает:** 181 тип документов — от жалобы в УК до исков и жалоб в надзорные органы.
 
 **Кому адресована:** УК / ГЖИ / РПН / ФАС / МЧС / СЭС / прокуратура / суд / администрация / сосед.
 
@@ -201,7 +201,7 @@
   `scenario_detect.py`, `marketplaces.py`, `calculators.py`, `seller_kind.py`
 - `configs/defect.py`, `return14.py`, `marketplace.py`, `service.py`
 
-**Статус:** работает. 1327 проверок.
+**Статус:** работает. 1555 проверок.
 
 ---
 
@@ -275,7 +275,7 @@
 - `rag_mass_v4.py`, `rag_hardcode_fixed.py` — сбор базы регионов
 - `adversarial_tests.py` — 29 атакующих кейсов
 
-### tests/ — 26 файлов, 1327 проверок
+### tests/ — 26 файлов, 1555 проверок
 
 **Ядро (core):** test_case_id, test_case_db, test_address, test_name_declension, test_phone_check, test_trace, test_pre_checks, test_llm
 **UK:** test_uk_hardchecks (62), test_entity_check, test_pdf_generation
