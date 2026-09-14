@@ -38,7 +38,9 @@ _ITEM_PATTERNS = [
      r"мультиварк|блендер|утюг|фен\b|электрочайник",
      "Бытовая техника"),
     (r"телевизор|монитор|наушник|колонк|саундбар|"
-     r"проектор|ресивер",
+     r"проектор|ресивер|магнитофон|радиопри[её]мник|"
+     r"музыкальн\w*\s+центр|бумбокс|плеер|диктофон|"
+     r"проигрывател|винил|проигрыватель",
      "Аудио/видео"),
     (r"куртк|пальто|плать|джинс|джинсы|обувь|ботинк|кроссовк|сапог|"
      r"футболк|рубашк|брюк|штан|костюм|свитер|свитшот|носк|бель",
@@ -473,7 +475,18 @@ def run_consumer_pre_checks(user_data: dict, extras: dict | None = None,
     seller_link = (user_data.get("ссылка_продавца") or "").strip()
     _is_legal = _is_legal_entity_pre(seller)
 
-    if seller_address:
+    if mp_data:
+        # Маркетплейс: адрес либо подставляется из справочника,
+        # либо не критичен (Avito — покупка с рук, адреса нет).
+        if seller_address:
+            add_known(report, "Адрес продавца", seller_address)
+        else:
+            add_known(
+                report,
+                "Адрес продавца",
+                "Подставляется из справочника владельцев агрегаторов",
+            )
+    elif seller_address:
         add_known(report, "Адрес продавца", seller_address)
     elif seller_link:
         add_known(report, "Ссылка на профиль", seller_link)
@@ -499,6 +512,12 @@ def run_consumer_pre_checks(user_data: dict, extras: dict | None = None,
         add_known(report, "Товар / услуга", item)
     elif _has_purchase_marker(problem) and len(problem) >= 30:
         # Категория не распозналась, но явно описан товар — не блокируем
+        add_known(report, "Товар / услуга", "Из описания")
+    elif (scenario == "defect"
+          and _detect_defect_subtype(problem)
+          and len(problem) >= 20):
+        # Подтип гарантийного случая уже определён (LLM или regex) —
+        # значит товар точно есть, блокировать бессмысленно
         add_known(report, "Товар / услуга", "Из описания")
     else:
         add_missing_critical(
