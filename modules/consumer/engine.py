@@ -10,9 +10,11 @@
 from __future__ import annotations
 
 import json
+import re
 
 from core.llm import call_alice_flash
 from modules.consumer.categories import get_category, detect_category
+from modules.consumer.entity_check import check_consumer_numeric_recall
 
 
 # ─── Какой конфиг использовать для какого сценария ───
@@ -61,6 +63,20 @@ _PROMPT_TEMPLATE = """Ты — модуль нормализации данны�
     ...
   ]
 }}"""
+
+
+_CORRECTIVE_NUMERIC = """Твой предыдущий ответ добавил данные, которых не было во входе.
+
+Исходные данные (JSON):
+{input_json}
+
+Твой предыдущий ответ:
+{previous}
+
+Эти значения НЕ встречаются во входных данных и должны быть УДАЛЕНЫ или ЗАМЕНЕНЫ на нейтральные формулировки:
+{missing}
+
+Перепиши ответ БЕЗ этих значений. Если дата или цена не указана пользователем — не упоминай её вообще. Верни СТРОГО тот же JSON-формат."""
 
 
 def _build_prompt(config: dict, cat_data: dict | None = None) -> str:
@@ -177,10 +193,64 @@ def process_consumer(user_data: dict, scenario: str,
             "retried": False,
         }
 
+    # ─── Anti-hallucination: числа и даты только из user_data ───
+    numeric_retried = False
+    recall = check_consumer_numeric_recall(
+        user_data, parsed["описание_проблемы_формальное"]
+    )
+    if not recall["ok"]:
+        numeric_retried = True
+        missing_str = "\n".join(
+            f"- {m['kind']}: {m['value']}" for m in recall["missing"]
+        )
+        corrective = _CORRECTIVE_NUMERIC.format(
+            input_json=json.dumps(user_data, ensure_ascii=False, indent=2),
+            previous=parsed["описание_проблемы_формальное"],
+            missing=missing_str,
+        )
+        a2 = _call_llm(prompt, corrective)
+        if "error" not in a2 and "parsed" in a2:
+            parsed2 = a2["parsed"]
+            # Проверяем, что структура сохранилась
+            if ({"описание_проблемы_формальное", "требование",
+                 "применимые_нормы"} <= set(parsed2)):
+                parsed = parsed2
+                recall = check_consumer_numeric_recall(
+                    user_data, parsed["описание_проблемы_формальное"]
+                )
+
+    # Если и после ретрая остались выдуманные числа — вырезаем их
+    # из текста (безопаснее, чем оставить галлюцинацию в PDF).
+    if not recall["ok"]:
+        txt = parsed["описание_проблемы_формальное"]
+        for m in recall["missing"]:
+            if m["kind"] == "date":
+                # Убираем саму дату и соседние предлоги
+                txt = re.sub(
+                    r"\s*(?:от|с|в|на)\s*" + re.escape(m["value"]),
+                    "", txt, flags=re.IGNORECASE,
+                )
+                txt = txt.replace(m["value"], "")
+            elif m["kind"] == "price":
+                # Убираем «стоимостью X рублей», «за X руб», «ценой X».
+                # Порядок альтернатив важен: «рублей» ПЕРЕД «руб\.?»,
+                # иначе «руб» съест «рублей» и оставит огрызок «лей».
+                pat = re.compile(
+                    r"(?:стоимость[юия]|стоимость|цена|ценой|цену|цены|за)\s+"
+                    r"\b" + re.escape(m["value"]) + r"\s*"
+                    r"(?:рублей|руб\.?|₽)?",
+                    re.IGNORECASE,
+                )
+                txt = pat.sub("", txt)
+        txt = re.sub(r"\s{2,}", " ", txt)
+        txt = re.sub(r"\s+([.,;:])", r"\1", txt).strip()
+        parsed["описание_проблемы_формальное"] = txt
+        parsed["_numeric_stripped"] = True
+
     return {
         "kind": "ok",
         "parsed": parsed,
-        "retried": False,
+        "retried": numeric_retried,
         "stop_kind": None,
         "scenario": scenario,
         "category": category,

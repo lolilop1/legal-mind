@@ -41,6 +41,50 @@ _FONT_CANDIDATES = [
 ]
 
 
+# Якорные корни для выбора demand_option.
+# Приоритет: специфичные (уценка, подменный, замена) идут ПЕРЕД общими
+# (ремонт, деньги) — иначе «вернуть деньги» матчится на «принять товар
+# в ремонт» через общее слово «товар».
+_CODE_ANCHORS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("discount",        ("уценк", "уменьшить цену", "уменьшение цены", "соразмерн")),
+    ("repair_exchange", ("подменн", "на время ремонта", "на период ремонта")),
+    ("repair_take",     ("принять товар", "сдать в ремонт", "принять в ремонт",
+                         "отдать в ремонт", "сдать на ремонт")),
+    ("replace",         ("замен",)),
+    ("money",           ("возврат", "вернуть денег", "уплаченн",
+                         "денежн средств", "возместить")),
+    ("repair",          ("ремонт", "устранить недостат", "устранение недостат",
+                         "безвозмездн")),
+    ("deadline_penalty", ("неустойк",)),
+    ("refuse",          ("отказ",)),
+    ("redo",            ("повторн", "заново")),
+)
+
+
+def _match_demand_option(demand: str, config: dict) -> dict | None:
+    """Находит demand_option по якорным корням в тексте требования.
+
+    1. Приоритетный список _CODE_ANCHORS (специфичные первыми).
+    2. Fallback — старое поведение по отдельным словам.
+    """
+    demand_lower = demand.lower()
+    options = config.get("demand_options", [])
+    options_by_code = {d.get("code"): d for d in options if d.get("code")}
+
+    for code, anchors in _CODE_ANCHORS:
+        opt = options_by_code.get(code)
+        if not opt:
+            continue
+        if any(a in demand_lower for a in anchors):
+            return opt
+
+    for d in options:
+        words = [w.lower().strip(",.") for w in d["wording"].split() if len(w) > 4]
+        if any(w in demand_lower for w in words):
+            return d
+    return None
+
+
 # Юридически корректные подзаголовки по сценариям
 _SUBTITLES = {
     "defect":      "о возврате стоимости товара ненадлежащего качества",
@@ -305,16 +349,7 @@ def generate_pdf(output_path: str, requisites: dict, normalized: dict,
 
     # Пункт 2 — срок из конфига (если нашли совпадение)
     if config:
-        # Ищем по ЛЮБОМУ слову из wording, а не только по первому
-        primary_demand = None
-        demand_lower = demand.lower()
-        for d in config.get("demand_options", []):
-            # Разбиваем wording на слова, ищем пересечение
-            words = [w.lower().strip(",.") for w in d["wording"].split() if len(w) > 4]
-            if any(w in demand_lower for w in words):
-                primary_demand = d
-                break
-        # Если не нашли по словам — берём первый по умолчанию
+        primary_demand = _match_demand_option(demand, config)
         if not primary_demand and config.get("demand_options"):
             primary_demand = config["demand_options"][0]
 

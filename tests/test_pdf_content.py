@@ -668,6 +668,36 @@ def main():
     check("ПРЕТЕНЗИЯ" in txt, "insurance: заголовок")
     check("28" in txt and "ЗоЗПП" in txt, "insurance: ст. 28")
 
+    # ═══ 6г. _match_demand_option: срок по требованию ═══
+    from modules.consumer.pdf import _match_demand_option
+    from modules.consumer.configs.defect import CONFIG as _DEF_CFG
+
+    _cases_match = [
+        # (текст требования, ожидаемый code, ожидаемый deadline)
+        ("Произвести возврат денежных средств за товар в связи с наличием "
+         "в нём недостатка",
+         "money", 10),
+        ("Возвратить уплаченную за товар сумму",
+         "money", 10),
+        ("Принять товар в безвозмездный гарантийный ремонт",
+         "repair_take", 45),
+        ("Безвозмездно устранить недостатки товара",
+         "repair", 45),
+        ("Заменить товар на аналогичный",
+         "replace", 7),
+        ("Соразмерно уменьшить покупную цену",
+         "discount", 10),
+        ("Предоставить аналогичный товар на время ремонта",
+         "repair_exchange", 3),
+    ]
+    for _txt, _code, _dd in _cases_match:
+        _opt = _match_demand_option(_txt, _DEF_CFG)
+        check(_opt is not None and _opt.get("code") == _code,
+              f"demand: {_code} для {_txt[:45]!r}")
+        check(_opt is not None and _opt.get("deadline_days") == _dd,
+              f"demand: {_code} срок {_dd} дн. (получено "
+              f"{_opt.get('deadline_days') if _opt else None})")
+
     # ═══ 7. Правовые нормы не выдуманы ═══
     # (проверка что LLM не выдумала ФЗ «О полиции» для UK, например)
     # Уже проверено выше — здесь просто sanity

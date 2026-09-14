@@ -858,7 +858,12 @@ def submit():
         _save_form_to_session(request.form)
 
         # Перед обычным стопом попробуем pre-check
-        if not result.get("emergency") and result.get("category") != "non_returnable":
+        # (кроме emergency, криминала и юридического отказа по невозвратному)
+        _skip_precheck = (
+            result.get("emergency")
+            or result.get("category") in ("non_returnable", "criminal")
+        )
+        if not _skip_precheck:
             try:
                 if problem_type == "uk":
                     precheck_on_stop = run_uk_pre_checks(user_data)
