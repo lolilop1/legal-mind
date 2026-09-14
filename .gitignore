@@ -84,3 +84,8 @@ tests/screenshots/
 sa-key.json
 *-key.json
 
+
+# SQLite WAL-режим
+web/cases.db-wal
+web/cases.db-shm
+
