@@ -112,6 +112,13 @@
       <label>Опишите проблему</label>
       <textarea name="проблема" rows="5" required placeholder="Например: в подъезде не убирают уже две недели, грязь и мусор в углах">{{ form_data.get('проблема', '') if form_data else '' }}</textarea>
 
+      <div id="lm-detected-type" class="lm-detected" style="display: none;">
+        <span class="lm-detected-icon">✓</span>
+        <span class="lm-detected-text">
+          Определилось: <strong id="lm-detected-title"></strong>
+        </span>
+      </div>
+
       <div class="wizard-nav">
         <span></span>
         <button type="button" class="wizard-next">Далее →</button>
@@ -496,6 +503,41 @@ function lmGetProblemType() {
       showStep(Math.max(current - 1, 1));
     });
   });
+
+  // ─── Авто-детект типа документа ───
+  var problemTextarea = form.querySelector('textarea[name="проблема"]');
+  var detectBox = document.getElementById('lm-detected-type');
+  var detectTitle = document.getElementById('lm-detected-title');
+
+  function lmDetectType() {
+    if (!problemTextarea || !detectBox) return;
+    var text = problemTextarea.value.trim();
+    if (text.length < 15) {
+      detectBox.style.display = 'none';
+      return;
+    }
+    var csrf = form.querySelector('input[name="_csrf_token"]').value;
+    var fd = new FormData();
+    fd.append('_csrf_token', csrf);
+    fd.append('text', text);
+    fetch('/detect_doc_type', { method: 'POST', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(j) {
+        if (j.code && j.title) {
+          detectTitle.textContent = j.title;
+          detectBox.style.display = 'flex';
+        } else {
+          detectBox.style.display = 'none';
+        }
+      })
+      .catch(function() {
+        detectBox.style.display = 'none';
+      });
+  }
+
+  if (problemTextarea) {
+    problemTextarea.addEventListener('blur', lmDetectType);
+  }
 
   // Инициализация видимости полей по типу
   window.lmOnTypeChange(lmGetProblemType());

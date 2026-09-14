@@ -1411,3 +1411,36 @@ textarea::placeholder {
   color: #d32f2f;
   font-weight: 700;
 }
+
+
+/* ─── Авто-детект типа документа ─── */
+.lm-detected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #e8f5e9;
+  border-left: 3px solid #2e7d32;
+  border-radius: 6px;
+  font-size: 13.5px;
+  color: #1b5e20;
+}
+
+.lm-detected-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: #2e7d32;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.lm-detected strong {
+  font-weight: 700;
+}

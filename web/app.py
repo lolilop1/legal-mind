@@ -1073,6 +1073,28 @@ def download_case_pdf(case_ref: str, doc_id: int):
     )
 
 
+@app.route("/detect_doc_type", methods=["POST"])
+def detect_doc_type_route():
+    """Авто-детект типа документа по тексту (для UI-подсказки)."""
+    if not _check_csrf():
+        return {"error": "csrf"}, 400
+    text = request.form.get("text", "").strip()
+    if not text:
+        return {"code": None, "title": None}
+    from modules.uk.doc_detect import detect_doc_type
+    code = detect_doc_type(text)
+    if not code or code == "uk":
+        return {"code": None, "title": None}
+    cfg = _get_uk_config(code)
+    if not cfg:
+        return {"code": None, "title": None}
+    return {
+        "code": code,
+        "title": cfg.get("title"),
+        "addressee": cfg.get("addressee"),
+    }
+
+
 @app.route("/health")
 def health():
     try:
