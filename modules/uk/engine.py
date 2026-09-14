@@ -32,6 +32,42 @@ def _get_config(doc_type: str):
     if doc_type == "damage":
         from modules.uk.configs.damage import CONFIG
         return CONFIG
+    if doc_type == "pereraschet":
+        from modules.uk.configs.pereraschet import CONFIG
+        return CONFIG
+    if doc_type == "zapros_info":
+        from modules.uk.configs.zapros_info import CONFIG
+        return CONFIG
+    if doc_type == "pereraschet":
+        from modules.uk.configs.pereraschet import CONFIG
+        return CONFIG
+    if doc_type == "kvitancia":
+        from modules.uk.configs.kvitancia import CONFIG
+        return CONFIG
+    if doc_type == "ads":
+        from modules.uk.configs.ads import CONFIG
+        return CONFIG
+    if doc_type == "tszh":
+        from modules.uk.configs.tszh import CONFIG
+        return CONFIG
+    if doc_type == "kapremont":
+        from modules.uk.configs.kapremont import CONFIG
+        return CONFIG
+    if doc_type == "municipality":
+        from modules.uk.configs.municipality import CONFIG
+        return CONFIG
+    if doc_type == "act":
+        from modules.uk.configs.act import CONFIG
+        return CONFIG
+    if doc_type == "s_o_s":
+        from modules.uk.configs.s_o_s import CONFIG
+        return CONFIG
+    if doc_type == "rastorzhenie":
+        from modules.uk.configs.rastorzhenie import CONFIG
+        return CONFIG
+    if doc_type == "snizhenie":
+        from modules.uk.configs.snizhenie import CONFIG
+        return CONFIG
     return None
 
 

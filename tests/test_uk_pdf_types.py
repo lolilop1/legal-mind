@@ -79,6 +79,20 @@ def main():
     t = _pdf_text({})
     check("ЗАЯВЛЕНИЕ" in t, "no config: дефолт ЗАЯВЛЕНИЕ")
 
+    # 7. Все 16 конфигов генерируют PDF
+    import modules.uk.engine as eng
+    codes = ["uk","gzhi","rpn","prokuratura","damage","pereraschet",
+             "zapros_info","kvitancia","ads","tszh","kapremont",
+             "municipality","act","s_o_s","rastorzhenie","snizhenie"]
+    for code in codes:
+        cfg = eng._get_config(code)
+        try:
+            txt = _pdf_text(cfg)
+            ok = len(txt) > 200 and cfg["pdf_title"] in txt
+            check(ok, f"{code}: PDF валиден ({len(txt)} симв.)")
+        except Exception as e:
+            check(False, f"{code}: PDF упал — {type(e).__name__}: {e}")
+
     print(f"\nTotal: {passed + failed}  Passed: {passed}  Failed: {failed}")
     raise SystemExit(1 if failed else 0)
 

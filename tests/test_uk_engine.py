@@ -62,6 +62,18 @@ def main():
     check(D["code"] == "damage", "damage: code")
     check("1064" in " ".join(D["allowed_norms"]), "damage: 1064 ГК")
 
+    # 5b. all 16 configs загружаются
+    codes = ["uk","gzhi","rpn","prokuratura","damage","pereraschet",
+             "zapros_info","kvitancia","ads","tszh","kapremont",
+             "municipality","act","s_o_s","rastorzhenie","snizhenie"]
+    for code in codes:
+        cfg = uk_engine._get_config(code)
+        check(cfg is not None and cfg.get("code") == code,
+              f"config {code}: загружается")
+        check("allowed_norms" in cfg and len(cfg["allowed_norms"]) >= 2,
+              f"config {code}: allowed_norms >= 2")
+        check("pdf_title" in cfg, f"config {code}: pdf_title есть")
+
     # 6. конфиг rpn
     from modules.uk.configs.rpn import CONFIG as R
     check(R["code"] == "rpn", "rpn: code")
