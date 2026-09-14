@@ -778,7 +778,9 @@ function lmGetProblemType() {
     new AirDatepicker(el, opts);
   }
 
-  initPicker(document.getElementById('date-purchase'), true);
+  // date-purchase: НЕ предзаполняем «сегодня» — юзер мог купить
+  // месяц назад. Пустое поле = пустое (LLM не выдумает дату).
+  initPicker(document.getElementById('date-purchase'), false);
   initPicker(document.getElementById('date-demand'), false);
 })();
 </script>
