@@ -3,6 +3,13 @@
 
 import _bootstrap  # noqa: F401
 
+import sys
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 import os
 import sys
 import tempfile

@@ -77,6 +77,7 @@
 
   <form method="post" action="/submit" novalidate id="main-form">
     <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="auto_detect" value="1">
 
     <!-- ═══ ШАГ 1 ═══ -->
     <div class="wizard-step" data-step="1">
