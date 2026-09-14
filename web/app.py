@@ -34,6 +34,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from modules.uk.hardchecks import hard_pre_check as hardcheck_uk
 from modules.uk.entity_check import check_entity_recall as recall_uk
 from modules.uk.pdf import generate_pdf as pdf_uk
+from modules.uk.engine import process_uk as process_uk_engine, _get_config as _get_uk_config
 
 from modules.noise.hardchecks import hard_pre_check as hardcheck_noise
 from modules.noise.pdf import generate_pdf as pdf_noise
@@ -539,12 +540,13 @@ def process_consumer_module(user_data: dict, scenario: str) -> dict:
 #  PDF
 # ═══════════════════════════════════════════════════════════════
 
-def _make_pdf_bytes(module: str, requisites: dict, normalized: dict) -> bytes:
+def _make_pdf_bytes(module: str, requisites: dict, normalized: dict,
+                    config: dict | None = None) -> bytes:
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
         tmp_path = f.name
     try:
         if module == "uk":
-            pdf_uk(tmp_path, requisites, normalized)
+            pdf_uk(tmp_path, requisites, normalized, config=config)
         else:
             pdf_noise(tmp_path, requisites, normalized)
         with open(tmp_path, "rb") as f:
@@ -800,9 +802,25 @@ def submit():
 
     consumer_cfg = None
     consumer_scenario = None
+    uk_cfg = None
     if problem_type == "uk":
+        doc_type = request.form.get("doc_type", "uk").strip() or "uk"
         requisites["ук_название"] = organization or "Управляющая компания"
-        result = process_uk(user_data)
+        uk_cfg = _get_uk_config(doc_type)
+        if uk_cfg is None:
+            result = {"kind": "error", "message": f"Неизвестный тип документа: {doc_type}", "retried": False}
+        elif doc_type == "uk":
+            result = process_uk(user_data)
+        else:
+            hc = hardcheck_uk(user_data)
+            if hc is not None:
+                kind = "emergency" if hc["emergency"] else "hard_check"
+                result = {"kind": "stop", "reason": hc["stop_reason"],
+                          "emergency": hc["emergency"], "stop_kind": kind, "retried": False}
+            else:
+                result = process_uk_engine(user_data, doc_type=doc_type)
+                if result["kind"] == "ok":
+                    result["stop_kind"] = None
     elif problem_type == "consumer":
         consumer_scenario = _resolve_consumer_scenario(user_data)
         consumer_cfg = _get_consumer_config(consumer_scenario)
@@ -860,7 +878,7 @@ def submit():
         normalized = {
             "описание_проблемы_формальное": parsed["описание_проблемы_формальное"],
             "упоминание_повторного_обращения": parsed.get("упоминание_повторного_обращения", ""),
-            "применимые_нормы": parsed.get("применимые_нормы") or ALLOWED_UK_NORMS,
+            "применимые_нормы": parsed.get("применимые_нормы") or (uk_cfg or {}).get("allowed_norms", ALLOWED_UK_NORMS),
             "engine_version": _build_engine_version(problem_type),
             "rules_date": RULES_DATE,
             "template_version": TEMPLATE_VERSION,
@@ -946,7 +964,7 @@ def submit():
             except OSError:
                 pass
     else:
-        pdf_bytes = _make_pdf_bytes(problem_type, requisites, normalized)
+        pdf_bytes = _make_pdf_bytes(problem_type, requisites, normalized, config=uk_cfg)
 
     case_ref = None
     try:

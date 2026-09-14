@@ -1,4 +1,4 @@
-﻿"""Legal Mind — Module 2: PDF generation (fpdf2 backend).
+"""Legal Mind — Module 2: PDF generation (fpdf2 backend).
 
 Uses fpdf2 instead of reportlab because fpdf2 embeds Unicode fonts with a
 proper ToUnicode CMap, so text can be copied out of the resulting PDF.
@@ -57,14 +57,22 @@ def _mc(pdf: FPDF, height: float, text: str, align: str = "L") -> None:
     pdf.set_x(pdf.l_margin)
 
 
-def generate_pdf(output_path: str, requisites: dict, normalized: dict) -> str:
-    """Render a заявление PDF.
+def generate_pdf(output_path: str, requisites: dict, normalized: dict,
+                 config: dict | None = None) -> str:
+    """Render a PDF document.
 
     requisites keys: ук_название, фио, адрес, телефон.
     normalized keys: описание_проблемы_формальное,
                      упоминание_повторного_обращения,
                      применимые_нормы (list[str]).
+    config (опционально): CONFIG документа (uk/gzhi/rpn/prokuratura/damage).
     """
+
+    cfg = config or {}
+    pdf_title = cfg.get("pdf_title", "ЗАЯВЛЕНИЕ")
+    pdf_subtitle = cfg.get("pdf_subtitle",
+                           "на ненадлежащее содержание общего имущества многоквартирного дома")
+    pdf_request_block = cfg.get("pdf_request_block", "ПРОШУ:")
     family, regular_path, bold_path = _find_font_pair()
 
     pdf = FPDF(orientation="P", unit="mm", format="A4")
@@ -89,13 +97,13 @@ def generate_pdf(output_path: str, requisites: dict, normalized: dict) -> str:
     # ─── Title ───
     pdf.ln(12)
     pdf.set_font(family, style="B", size=14)
-    _mc(pdf, 7, "ЗАЯВЛЕНИЕ", align="C")
+    _mc(pdf, 7, pdf_title, align="C")
 
     pdf.set_font(family, style="", size=11)
     _mc(
         pdf,
         5.5,
-        "на ненадлежащее содержание общего имущества многоквартирного дома",
+        pdf_subtitle,
         align="C",
     )
     pdf.ln(6)
@@ -127,7 +135,7 @@ def generate_pdf(output_path: str, requisites: dict, normalized: dict) -> str:
     # ─── Proshu ───
     pdf.ln(3)
     pdf.set_font(family, style="B", size=11)
-    _mc(pdf, 6, "ПРОШУ:", align="L")
+    _mc(pdf, 6, pdf_request_block, align="L")
 
     pdf.set_font(family, style="", size=11)
     request_items = [

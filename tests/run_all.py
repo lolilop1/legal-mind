@@ -22,6 +22,8 @@ _TESTS = [
     "test_uk_hardchecks.py",
     "test_noise_hardchecks.py",
     "test_entity_check.py",
+    "test_uk_engine.py",
+    "test_uk_pdf_types.py",
     "test_name_declension.py",
     "test_phone_check.py",
     "test_region_extractor.py",
