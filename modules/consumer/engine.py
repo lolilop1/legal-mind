@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 
 from core.llm import call_alice_flash
+from modules.consumer.categories import get_category, detect_category
 
 
 # ─── Какой конфиг использовать для какого сценария ───
@@ -62,16 +63,26 @@ _PROMPT_TEMPLATE = """Ты — модуль нормализации данны�
 }}"""
 
 
-def _build_prompt(config: dict) -> str:
-    hints = "\n".join(f"- {h}" for h in config["llm_hints"])
-    norms = "\n".join(f"- \"{n}\"" for n in config["allowed_norms"])
+def _build_prompt(config: dict, cat_data: dict | None = None) -> str:
+    hints_list = list(config["llm_hints"])
+    if cat_data:
+        hints_list.insert(0,
+            "КОНКРЕТНАЯ КАТЕГОРИЯ: " + cat_data["title"] + ". "
+            "Сохрани название категории в описании (не обобщай)."
+        )
+        if cat_data.get("tech_complex"):
+            hints_list.append(
+                "ВАЖНО: товар технически сложный (Пост. 924). "
+                "Учти оговорки ст. 18 ЗоЗПП про 15 дней."
+            )
+    hints = "\n".join(f"- {h}" for h in hints_list)
+    norms = "\n".join(f'- "{n}"' for n in config["allowed_norms"])
     return _PROMPT_TEMPLATE.format(
         title=config["title"],
         article=config["article"],
         hints=hints,
         norms=norms,
     )
-
 
 def _parse_llm_json(raw: str) -> dict:
     cleaned = (raw.strip()
@@ -92,15 +103,19 @@ def _call_llm(instructions: str, user_input: str) -> dict:
     return {"parsed": parsed, "raw_response": raw}
 
 
-def process_consumer(user_data: dict, scenario: str) -> dict:
+def process_consumer(user_data: dict, scenario: str,
+                     category: str | None = None) -> dict:
     """Главная точка входа модуля 1.
 
     Args:
         user_data: поля формы (проблема, продавец, дата_покупки, требование…)
         scenario: "defect" | "return14" | "marketplace" | "service"
+        category: код категории товара/услуги (опционально).
+                  Если None — определится автоматически по тексту.
 
     Returns:
-        {"kind": "ok"|"stop"|"error", "parsed": {...}, "retried": bool, ...}
+        {"kind": "ok"|"stop"|"error", "parsed": {...}, "retried": bool,
+         "category": str|None, ...}
     """
     config = _get_config(scenario)
     if config is None:
@@ -110,7 +125,12 @@ def process_consumer(user_data: dict, scenario: str) -> dict:
             "retried": False,
         }
 
-    prompt = _build_prompt(config)
+    # Категория: если не задана — определяем по тексту
+    if category is None:
+        category = detect_category(user_data.get("проблема", ""))
+    cat_data = get_category(category) if category else None
+
+    prompt = _build_prompt(config, cat_data)
     user_msg = json.dumps(user_data, ensure_ascii=False)
 
     a1 = _call_llm(prompt, user_msg)
@@ -163,4 +183,5 @@ def process_consumer(user_data: dict, scenario: str) -> dict:
         "retried": False,
         "stop_kind": None,
         "scenario": scenario,
+        "category": category,
     }

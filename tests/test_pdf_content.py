@@ -11,6 +11,13 @@ LLM замокан. Бесплатно, быстро, ловит:
 
 import _bootstrap  # noqa: F401
 
+import sys
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 import io
 import os
 import sys

@@ -21,6 +21,7 @@ from datetime import date
 from fpdf import FPDF
 
 from modules.consumer.marketplaces import resolve_marketplace
+from modules.consumer.categories import get_category
 from core.name_declension import decline_fio_dative, detect_gender_by_name, _detect_gender
 
 
@@ -200,14 +201,16 @@ def _decline_word(word: str, kind: str, gender: str | None = None) -> str:
 
 
 def generate_pdf(output_path: str, requisites: dict, normalized: dict,
-                 config: dict | None = None) -> str:
+                 config: dict | None = None,
+                 category: str | None = None) -> str:
     """Рендерит PDF-претензию по ЗоЗПП.
 
     requisites keys: продавец, адрес_продавца, фио, адрес, телефон
     normalized keys: описание_проблемы_формальное, требование,
                      применимые_нормы (list[str]),
                      engine_version, rules_date, template_version
-    config (опционально): конфиг сценария для подзаголовка и сроков.
+    config (опционально): конфиг сценария.
+    category (опционально): код категории товара (напр. "smartphone").
     """
     family, regular_path, bold_path = _find_font_pair()
 
@@ -255,6 +258,19 @@ def generate_pdf(output_path: str, requisites: dict, normalized: dict,
         config["code"] if config else "",
         "о нарушении прав потребителя",
     )
+    # Подстановка категории: «о возврате стоимости смартфона»
+    cat = get_category(category) if category else None
+    if cat and config:
+        code = config.get("code", "")
+        cat_title = cat["title"]
+        if code == "defect":
+            subtitle = f"о возврате стоимости {cat_title} ненадлежащего качества"
+        elif code == "return14":
+            subtitle = f"о возврате {cat_title} надлежащего качества"
+        elif code == "marketplace":
+            subtitle = f"о нарушении прав потребителя при покупке {cat_title}"
+        elif code == "service":
+            subtitle = f"о некачественном оказании услуг ({cat_title})"
     pdf.set_font(family, style="", size=11)
     _mc(pdf, 5.5, subtitle, align="C")
     pdf.ln(6)

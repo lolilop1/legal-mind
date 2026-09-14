@@ -505,7 +505,8 @@ def _resolve_consumer_scenario(user_data: dict) -> str:
     return "defect"
 
 
-def process_consumer_module(user_data: dict, scenario: str) -> dict:
+def process_consumer_module(user_data: dict, scenario: str,
+                             category: str | None = None) -> dict:
     """Hard-check + engine для consumer."""
     hc = hardcheck_consumer(user_data, scenario=scenario)
     if hc is not None:
@@ -517,7 +518,7 @@ def process_consumer_module(user_data: dict, scenario: str) -> dict:
             "stop_kind": "hard_check",
             "retried": False,
         }
-    result = process_consumer(user_data, scenario)
+    result = process_consumer(user_data, scenario, category=category)
     result["scenario"] = scenario
 
     # Подтип для калькулятора
@@ -838,7 +839,15 @@ def submit():
         requisites["номер_заказа"] = user_data.get("номер_заказа") or ""
         _fio_raw = request.form.get("фио", "").strip()
         requisites["пол"] = detect_gender(_fio_raw) or "masc"
-        result = process_consumer_module(user_data, consumer_scenario)
+        _detected_cat = None
+        if request.form.get("auto_detect") == "1":
+            from modules.consumer.categories import detect_category
+            _detected_cat = detect_category(user_data.get("проблема", ""))
+            if _detected_cat:
+                log.info("category_detect: %s", _detected_cat)
+        result = process_consumer_module(user_data, consumer_scenario,
+                                         category=_detected_cat)
+        _consumer_cat = result.get("category")
     else:
         requisites["адресат"] = organization or "Начальнику ОВД по району"
         result = process_noise(user_data)
@@ -963,7 +972,7 @@ def submit():
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
             tmp_path = f.name
         try:
-            pdf_consumer(tmp_path, requisites, normalized, config=consumer_cfg)
+            pdf_consumer(tmp_path, requisites, normalized, config=consumer_cfg, category=_consumer_cat)
             with open(tmp_path, "rb") as f:
                 pdf_bytes = f.read()
         finally:
