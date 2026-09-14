@@ -35,7 +35,36 @@ YC_S3_SECRET = os.getenv("YC_S3_SECRET", "")
 YC_S3_BUCKET = os.getenv("YC_S3_BUCKET", "legal-mind-backups")
 CASE_DB_PATH = os.getenv("CASE_DB_PATH") or str(_DEFAULT_DB)
 RETENTION_DAYS = int(os.getenv("BACKUP_RETENTION_DAYS", "30"))
-BACKUP_PASSWORD = os.getenv("BACKUP_ENCRYPTION_PASSWORD", "")
+
+# Lockbox: пароль шифрования тянем из Yandex Lockbox по REST API.
+# Fallback: если LOCKBOX_SECRET_ID не задан — берём из .env.backup
+LOCKBOX_SECRET_ID = os.getenv("LOCKBOX_SECRET_ID", "e6qoscc5gjf12n81vsf9")
+LOCKBOX_KEY = os.getenv("LOCKBOX_KEY", "BACKUP_ENCRYPTION_PASSWORD")
+
+
+def _get_backup_password() -> str:
+    """Пароль шифрования: из Lockbox, fallback — из .env.backup."""
+    # Пытаемся из Lockbox
+    try:
+        from core.lockbox import get_secret_value
+        pwd = get_secret_value(LOCKBOX_SECRET_ID, LOCKBOX_KEY)
+        if pwd:
+            log(f"пароль шифрования получен из Lockbox (secret_id={LOCKBOX_SECRET_ID})")
+            return pwd
+    except Exception as e:
+        log(f"Lockbox недоступен: {type(e).__name__}: {e}")
+        log("fallback на BACKUP_ENCRYPTION_PASSWORD из .env.backup")
+
+    # Fallback: .env.backup
+    pwd = os.getenv("BACKUP_ENCRYPTION_PASSWORD", "")
+    if pwd:
+        log("пароль взят из .env.backup (fallback)")
+        return pwd
+
+    raise RuntimeError(
+        "Пароль шифрования недоступен: Lockbox не отвечает, "
+        "и BACKUP_ENCRYPTION_PASSWORD не задан в .env.backup"
+    )
 
 ENDPOINT = "https://storage.yandexcloud.net"
 PREFIX = "daily/"
@@ -128,6 +157,9 @@ def main() -> int:
         log("FAIL: YC_S3_KEY_ID / YC_S3_SECRET не заданы в .env.backup")
         return 1
 
+    # Пароль проверим позже (Lockbox или fallback)
+    # при вызове _get_backup_password()
+
     src = Path(CASE_DB_PATH)
     if not src.exists():
         log(f"FAIL: {src} не найден")
@@ -147,7 +179,8 @@ def main() -> int:
         log(f"сжатый размер: {size_gz_kb} КБ")
 
         log("encrypt (aes-256-cbc)...")
-        tmp_enc = encrypt_file(tmp_gz, BACKUP_PASSWORD)
+        pwd = _get_backup_password()
+        tmp_enc = encrypt_file(tmp_gz, pwd)
         size_enc_kb = tmp_enc.stat().st_size // 1024
         log(f"зашифрованный размер: {size_enc_kb} КБ")
 
