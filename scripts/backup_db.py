@@ -28,6 +28,10 @@ _ROOT = Path(__file__).resolve().parent.parent
 _ENV_BACKUP = _ROOT / ".env.backup"
 _DEFAULT_DB = _ROOT / "web" / "cases.db"
 
+# Добавляем корень проекта в sys.path, чтобы работал "from core.lockbox import ..."
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 load_dotenv(dotenv_path=_ENV_BACKUP if _ENV_BACKUP.exists() else None)
 
 YC_S3_KEY_ID = os.getenv("YC_S3_KEY_ID", "")
