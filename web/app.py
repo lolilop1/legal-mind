@@ -804,7 +804,15 @@ def submit():
     consumer_scenario = None
     uk_cfg = None
     if problem_type == "uk":
-        doc_type = request.form.get("doc_type", "uk").strip() or "uk"
+        # 1. Из формы (если UI дал)
+        doc_type = request.form.get("doc_type", "").strip()
+        # 2. Авто-детект — только если UI попросил (auto_detect=1)
+        if not doc_type and request.form.get("auto_detect") == "1":
+            from modules.uk.doc_detect import detect_doc_type
+            doc_type = detect_doc_type(user_data.get("проблема", "")) or "uk"
+            log.info("doc_detect: %s", doc_type)
+        if not doc_type:
+            doc_type = "uk"
         requisites["ук_название"] = organization or "Управляющая компания"
         uk_cfg = _get_uk_config(doc_type)
         if uk_cfg is None:

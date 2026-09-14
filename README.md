@@ -86,20 +86,20 @@ Python 3.12+, Flask, gunicorn, nginx, systemd, fpdf2, pypdf, pymorphy3, Alice AI
   - `consumer/calculators.py` — калькулятор неустойки
 - `web/` — Flask, шаблоны, статика
 - `scripts/` — утилиты + smoke-тест
-- `tests/` — 26 файлов, 1555 проверок
+- `tests/` — 26 файлов, 2118 проверок
 - `docs/` — документация
 - `deploy/` — инфраструктура
 
 ## Проверка после изменений
 
 **Автоматически (CI):**
-- GitHub Actions гоняет все **1555 тестов** на каждый push
+- GitHub Actions гоняет все **2118 тестов** на каждый push
 - Если тесты красные — на прод не уедет
 - **Smoke-тест** (6 сценариев с реальным LLM) — понедельники 9:00 МСК + вручную
 
 **Локально (когда хочешь):**
 
-    python tests\run_all.py               # 1555 тестов, ~30 сек
+    python tests\run_all.py               # 2118 тестов, ~30 сек
     python tests\test_ui_playwright.py     # UI в headless Chromium
     .\scripts\run_smoke.ps1               # 6 сценариев с реальным LLM
     .\scripts\run_smoke.ps1 -Against prod # против прода
@@ -160,6 +160,6 @@ STATUS.md, ROADMAP.md, docs/.
 - Инструкция: `deploy/health_check/README.md`
 
 ### CI/CD
-- Tests на каждый push (1555 проверка + Playwright)
+- Tests на каждый push (2118 проверка + Playwright)
 - Deploy через `workflow_run` — только после зелёных Tests
 - Smoke против прода по понедельникам

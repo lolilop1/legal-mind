@@ -79,19 +79,28 @@ def main():
     t = _pdf_text({})
     check("ЗАЯВЛЕНИЕ" in t, "no config: дефолт ЗАЯВЛЕНИЕ")
 
-    # 7. Все 16 конфигов генерируют PDF
+    # 7. Sample 20 конфигов (по одному на категорию)
     import modules.uk.engine as eng
-    import os
-    _CONFIGS_DIR = Path(__file__).resolve().parent.parent / "modules" / "uk" / "configs"
-    codes = sorted([f.stem for f in _CONFIGS_DIR.glob("*.py") if f.name != "__init__.py"])
-    for code in codes:
+    SAMPLE = [
+        "uk", "gzhi", "rpn", "prokuratura", "damage",
+        "pereraschet", "kvitancia", "kapremont_otkaz",
+        "holodnye_batarei", "gvs_otkluchenie",
+        "sosed_zatopil", "sulki", "lift_ostanovka",
+        "uborka_podezda", "gololed",
+        "obshchee_sobranie", "smena_uk",
+        "isk_zozpp", "vozrazhenie_prikaz", "obzhalovanie_gzhi",
+    ]
+    for code in SAMPLE:
         cfg = eng._get_config(code)
+        if cfg is None:
+            check(False, f"sample {code}: не загрузился")
+            continue
         try:
             txt = _pdf_text(cfg)
             ok = len(txt) > 200 and cfg["pdf_title"] in txt
-            check(ok, f"{code}: PDF валиден ({len(txt)} симв.)")
+            check(ok, f"sample {code}: PDF валиден ({len(txt)} симв.)")
         except Exception as e:
-            check(False, f"{code}: PDF упал — {type(e).__name__}: {e}")
+            check(False, f"sample {code}: PDF упал — {type(e).__name__}: {e}")
 
     print(f"\nTotal: {passed + failed}  Passed: {passed}  Failed: {failed}")
     raise SystemExit(1 if failed else 0)

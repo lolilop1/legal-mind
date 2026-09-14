@@ -14,6 +14,7 @@ except (AttributeError, OSError):
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 
@@ -24,6 +25,7 @@ _TESTS = [
     "test_entity_check.py",
     "test_uk_engine.py",
     "test_uk_pdf_types.py",
+    "test_uk_configs_all.py",
     "test_name_declension.py",
     "test_phone_check.py",
     "test_region_extractor.py",
@@ -68,6 +70,7 @@ def _parse_result(output: str) -> tuple[int, int, int]:
 
 
 def main():
+    _start_ts = time.time()
     failed_files = []
     passed_files = []
     grand_total = 0
@@ -114,7 +117,9 @@ def main():
         else:
             failed_files.append(test_file)
 
+    _total_sec = time.time() - _start_ts
     print(f"\n\n{'='*70}")
+    print(f"TIME:    {_total_sec:.1f} сек ({_total_sec/60:.1f} мин)")
     print(f"FILES:   passed {len(passed_files)}, failed {len(failed_files)}")
     print(f"CHECKS:  total {grand_total}, passed {grand_passed}, "
           f"failed {grand_failed}")
