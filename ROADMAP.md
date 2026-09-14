@@ -80,11 +80,25 @@
 
 Авто-определение сценария по тексту. Wizard-форма. Gender detection. Калькулятор неустойки. Умная шапка PDF. Номер заказа + автоадрес владельца агрегатора.
 
+### Выбор требования юзером ✅ (14.09.2026)
+
+- `modules/consumer/demands.py` — 9 требований, каждое со сроком и статьёй
+- UI: секция «Что требуете» на шаге 2 (radio-карточки)
+- `engine.py`: жёсткая подмена требования от LLM выбранным
+- `pdf.py`: срок и wording из формы, не от LLM
+
+### Anti-hallucination + криминал-фильтр ✅ (14.09.2026)
+
+- `modules/consumer/entity_check.py` — числа и даты только из user_data
+- `hardchecks.py`: `_criminal_signal()` — STOP на «сдать краденое»
+- UI: убрано предзаполнение «Дата покупки» сегодняшним числом
+- `scenario_detect`: приоритет defect над return14 при явной поломке
+
 ## Этап 8 — Автодеплой ✅
 
 - GitHub репозиторий
 - SSH Deploy Key (read-only)
-- .github/workflows/test.yml — 2177 тестов на push + Playwright UI
+- .github/workflows/test.yml — 2298 тестов на push + Playwright UI
 - .github/workflows/deploy.yml — через workflow_run, только после Tests
 - .github/workflows/smoke.yml — 6 сценариев против прода, понедельники + вручную
 - Actions: checkout@v5, setup-python@v6, upload-artifact@v5

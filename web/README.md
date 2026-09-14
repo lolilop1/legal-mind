@@ -17,11 +17,18 @@
 ## Что внутри
 
 - app.py — Flask-приложение (роуты, process_uk / process_noise / process_consumer)
-- templates/ — HTML-шаблоны (index, my, case, stop, pre_check_blocked)
+- templates/ — HTML-шаблоны (index, my, case, stop, pre_check_blocked, privacy)
 - static/ — CSS + Air Datepicker
 - .env — API-ключи (не в git!)
 - requirements.txt — зависимости Python
 - schema.sql — схема БД CASE
+
+### Новое в consumer (14.09.2026)
+
+- **Секция «Что требуете»** на шаге 2 — юзер сам выбирает одно
+  требование (вернуть/заменить/ремонт/уценка/неустойка и др.)
+- **Аудиотехника** — магнитофон, плеер, бумбокс распознаются
+- **Криминал-фильтр** — «сдать краденое по гарантии» → STOP
 
 Логика модулей — в modules/ (на уровень выше):
 
