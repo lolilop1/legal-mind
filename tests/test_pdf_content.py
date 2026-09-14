@@ -230,6 +230,18 @@ app_module._call_llm = _fake_llm_uk_noise
 consumer_engine._call_llm = _fake_llm_consumer
 
 
+# ─── Мок: детерминированная статья (не зависим от noise_articles.json) ───
+def _fake_get_article(region):
+    """Мок для тестов: фиксированные статьи для известных регионов."""
+    return {
+        "Москва": "Статья 3. Административная ответственность за нарушение покоя граждан и тишины",
+        "Санкт-Петербург": "Статья 8. Нарушение тишины и покоя граждан",
+    }.get(region)
+
+
+app_module.get_article_for_region = _fake_get_article
+
+
 app = app_module.app
 app.config["TESTING"] = True
 
