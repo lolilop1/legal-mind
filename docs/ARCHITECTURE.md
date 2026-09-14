@@ -86,7 +86,7 @@ PDF отдаётся пользователю
     │   └── .env
     │
     ├── scripts/                 — утилиты + smoke
-    ├── tests/                   — 26 файлов, 762 проверок
+    ├── tests/                   — 26 файлов, 810 проверок
     ├── docs/                    — документация
     ├── deploy/                  — инфраструктура
     └── .github/workflows/       — CI/CD
@@ -189,7 +189,7 @@ YandexGPT Pro                   | RAG (разово)
 ## CI/CD
 
 ### test.yml
-Push → GitHub Actions → 762 тестов на Python 3.12 + chromium (Playwright).
+Push → GitHub Actions → 810 тестов на Python 3.12 + chromium (Playwright).
 Actions: `checkout@v5`, `setup-python@v6`, `upload-artifact@v5`.
 Если красное — деплой не запустится.
 
@@ -205,6 +205,12 @@ Actions: `checkout@v5`, `setup-python@v6`, `upload-artifact@v5`.
 5. systemctl restart legal-mind
 6. curl /health — проверка
 7. При провале — красный
+
+### Мониторинг
+Cloud Function в Yandex Cloud (`deploy/health_check/`) — Timer Trigger
+каждые 5 минут дёргает `/health`. При смене статуса (ok→fail / fail→ok)
+шлёт в Telegram. Состояние — в `s3://legal-mind-backups/monitoring/state.json`
+(антифлуд). Подробнее: `deploy/health_check/README.md`.
 
 ### smoke.yml
 - По понедельникам 9:00 МСК (`cron: '0 6 * * 1'`)

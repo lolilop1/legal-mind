@@ -17,7 +17,7 @@ Legal Trace (этап 5)                   | OK
 Автодеплой (этап 8)                    | OK
 CI: Tests + Deploy + Smoke             | OK
 Модульная структура                    | OK
-Тесты (26 файлов, 762 проверок)         | OK (762/762)
+Тесты (26 файлов, 810 проверок)         | OK (810/810)
 UI-тесты (Playwright, 19)              | OK
 Adversarial (29 кейсов)                | OK (29/29)
 Домен + HTTPS                          | ждёт оплаты
@@ -27,7 +27,7 @@ Adversarial (29 кейсов)                | OK (29/29)
 ## Что сделано
 
 ### Модульность
-Модульная структура (core/region/modules/web/scripts/tests/docs/deploy). 26 файлов тестов, 762 проверок.
+Модульная структура (core/region/modules/web/scripts/tests/docs/deploy). 26 файлов тестов, 810 проверок.
 
 ### CASE (этап 3)
 core/case_db.py, core/case_id.py, web/schema.sql. Экран /my, карточка /case. core/labels.py.
@@ -45,7 +45,7 @@ RULES_DATE, TEMPLATE_VERSION. PDF-подвал. Блок в карточке.
 GitHub репо lolilop1/legal-mind. Deploy Key. deploy.yml через workflow_run — срабатывает ТОЛЬКО после зелёных Tests. Ручной deploy.ps1 остался как fallback.
 
 ### CI/CD (13.09.2026)
-- .github/workflows/test.yml — 762 тестов на каждый push
+- .github/workflows/test.yml — 810 тестов на каждый push
 - .github/workflows/deploy.yml — через workflow_run только после Tests
 - .github/workflows/smoke.yml — 6 сценариев против прода, понедельники 9:00 МСК + вручную
 - Бейджи в README (Tests, Deploy, Smoke)
@@ -119,6 +119,13 @@ HTTPS (ждёт домена).
 - Playwright UI-тесты (22 проверки), 7 скриншотов через
   `scripts/make_screenshots.py`
 - `.lm-field-error`, `.type-card`, `.form-section` в style.css
+
+### Мониторинг (14.09.2026)
+- Cloud Function в Yandex Cloud — дёргает `/health` каждые 5 мин
+- Telegram-алерты при падении/восстановлении
+- Антифлуд через S3 (`monitoring/state.json`)
+- Timer Trigger `*/5 * * * ? *`
+- Инструкция: `deploy/health_check/README.md`
 
 ### Документация
 README, STATUS, ROADMAP, docs/ARCHITECTURE, DECISIONS, MODULES, CHANGELOG, SETUP, web/README — все синхронизированы с кодом.
