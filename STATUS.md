@@ -50,6 +50,17 @@ GitHub репо lolilop1/legal-mind. Deploy Key. deploy.yml через workflow_
 - .github/workflows/smoke.yml — 6 сценариев против прода, понедельники 9:00 МСК + вручную
 - Бейджи в README (Tests, Deploy, Smoke)
 
+### Модуль 2 (УК) — 181 тип документа (14.09.2026)
+
+- 181 конфиг в `modules/uk/configs/`
+- Общий `engine.py` (importlib вместо if-ов)
+- PDF параметризован (`pdf_title`, `pdf_subtitle`, `pdf_request_block`)
+- **Авто-детект типа** — `doc_detect.py`, 45 тестов
+- `app.py` — `auto_detect=1` в форме (без флага default `uk`)
+- Тесты: `test_uk_engine` (114), `test_uk_pdf_types` (sample 20),
+  `test_uk_configs_all` (724), `test_uk_doc_detect` (45)
+- Полный прогон: 40 сек (было 58 — sample PDF вместо 181)
+
 ### Модуль 1 (Потребитель) — 4 сценария + расширения
 
 **Базовые сценарии:**
