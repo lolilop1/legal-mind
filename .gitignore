@@ -88,3 +88,11 @@ IDEAS.md
 
 # Бэкапы БД перед патчами (локальные)
 *.db.backup_*
+
+# Одноразовые скрипты
+_retry.py
+_probe.py
+_patch.py
+_audit.py
+_extract.py
+_debug.py
