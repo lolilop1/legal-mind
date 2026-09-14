@@ -15,6 +15,7 @@ import io
 import os
 import sys
 import tempfile
+from pathlib import Path
 
 
 _TMP_DB = tempfile.NamedTemporaryFile(suffix=".db", delete=False).name
@@ -498,9 +499,36 @@ def main():
           "шум: тема — тишина/покой")
     check("Москв" in txt, "шум: регион Москва в PDF (закон)")
     check("ПРОШУ" in txt, "шум: блок ПРОШУ")
-    # Статья из noise_articles.json для Москвы — «Статья 3. Административная ответственность...»
-    check("Статья 3" in txt or "статья 3" in txt,
-          f"шум: статья 3 закона Москвы в PDF", txt[-500:])
+    # ─── Диагностика: JSON + extract_region + process_noise ───
+    import json as _json
+    _jp = Path(__file__).resolve().parent.parent / "region" / "data" / "noise_articles.json"
+    check(_jp.exists(), f"диагностика: JSON существует ({_jp.name})")
+    if _jp.exists():
+        try:
+            _data = _json.loads(_jp.read_text(encoding="utf-8"))
+            check("Москва" in _data, f"диагностика: 'Москва' ключ в JSON ({len(_data)} ключей)")
+            _art = _data.get("Москва", {}).get("article")
+            check(_art is not None, f"диагностика: статья Москвы не None ({_art!r})")
+        except Exception as _e:
+            check(False, f"диагностика: JSON parse error: {_e}")
+
+    # extract_region для адреса из NOISE_FORM
+    from region.extractor import extract_region as _er
+    _reg = _er(NOISE_FORM["адрес"])
+    check(_reg == "Москва", f"диагностика: extract_region → 'Москва' (got: {_reg!r})")
+
+    # Через мок получаем статью
+    _art_mock = app_module.get_article_for_region(_reg) if _reg else None
+    check(_art_mock is not None, f"диагностика: мок вернул статью ({_art_mock!r})")
+
+    # Что реально в PDF
+    _has_st = "Статья 3" in txt or "статья 3" in txt
+    if not _has_st:
+        print(f"\n[DIAG] PDF последние 500: {txt[-500:]!r}")
+        print(f"[DIAG] Содержит 'Москв': {'Москв' in txt}")
+        print(f"[DIAG] Содержит 'ЗАЯВЛЕНИЕ': {'ЗАЯВЛЕНИЕ' in txt}")
+        print(f"[DIAG] Длина PDF-текста: {len(txt)}")
+    check(_has_st, "шум: статья 3 закона Москвы в PDF")
 
     # ═══ 3. Defect + расчёт ═══
     txt = _submit_and_get_pdf(client, DEFECT_FORM)
