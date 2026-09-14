@@ -16,114 +16,15 @@ from modules.uk.entity_check import check_entity_recall
 
 
 def _get_config(doc_type: str):
-    """Импорт конфига по коду документа."""
-    if doc_type == "uk":
-        from modules.uk.configs.uk import CONFIG
-        return CONFIG
-    if doc_type == "gzhi":
-        from modules.uk.configs.gzhi import CONFIG
-        return CONFIG
-    if doc_type == "rpn":
-        from modules.uk.configs.rpn import CONFIG
-        return CONFIG
-    if doc_type == "prokuratura":
-        from modules.uk.configs.prokuratura import CONFIG
-        return CONFIG
-    if doc_type == "damage":
-        from modules.uk.configs.damage import CONFIG
-        return CONFIG
-    if doc_type == "pereraschet":
-        from modules.uk.configs.pereraschet import CONFIG
-        return CONFIG
-    if doc_type == "zapros_info":
-        from modules.uk.configs.zapros_info import CONFIG
-        return CONFIG
-    if doc_type == "pereraschet":
-        from modules.uk.configs.pereraschet import CONFIG
-        return CONFIG
-    if doc_type == "kvitancia":
-        from modules.uk.configs.kvitancia import CONFIG
-        return CONFIG
-    if doc_type == "ads":
-        from modules.uk.configs.ads import CONFIG
-        return CONFIG
-    if doc_type == "tszh":
-        from modules.uk.configs.tszh import CONFIG
-        return CONFIG
-    if doc_type == "kapremont":
-        from modules.uk.configs.kapremont import CONFIG
-        return CONFIG
-    if doc_type == "municipality":
-        from modules.uk.configs.municipality import CONFIG
-        return CONFIG
-    if doc_type == "act":
-        from modules.uk.configs.act import CONFIG
-        return CONFIG
-    if doc_type == "s_o_s":
-        from modules.uk.configs.s_o_s import CONFIG
-        return CONFIG
-    if doc_type == "rastorzhenie":
-        from modules.uk.configs.rastorzhenie import CONFIG
-        return CONFIG
-    if doc_type == "snizhenie":
-        from modules.uk.configs.snizhenie import CONFIG
-        return CONFIG
-    if doc_type == "roszhilnadzor":
-        from modules.uk.configs.roszhilnadzor import CONFIG
-        return CONFIG
-    if doc_type == "fas":
-        from modules.uk.configs.fas import CONFIG
-        return CONFIG
-    if doc_type == "mchs":
-        from modules.uk.configs.mchs import CONFIG
-        return CONFIG
-    if doc_type == "ses":
-        from modules.uk.configs.ses import CONFIG
-        return CONFIG
-    if doc_type == "zatoplenie":
-        from modules.uk.configs.zatoplenie import CONFIG
-        return CONFIG
-    if doc_type == "pereplanirovka":
-        from modules.uk.configs.pereplanirovka import CONFIG
-        return CONFIG
-    if doc_type == "parkovka":
-        from modules.uk.configs.parkovka import CONFIG
-        return CONFIG
-    if doc_type == "reklama":
-        from modules.uk.configs.reklama import CONFIG
-        return CONFIG
-    if doc_type == "tehdoc":
-        from modules.uk.configs.tehdoc import CONFIG
-        return CONFIG
-    if doc_type == "neprozhivanie":
-        from modules.uk.configs.neprozhivanie import CONFIG
-        return CONFIG
-    if doc_type == "otpusk":
-        from modules.uk.configs.otpusk import CONFIG
-        return CONFIG
-    if doc_type == "isk_zozpp":
-        from modules.uk.configs.isk_zozpp import CONFIG
-        return CONFIG
-    if doc_type == "isk_pereraschet":
-        from modules.uk.configs.isk_pereraschet import CONFIG
-        return CONFIG
-    if doc_type == "isk_objazanie":
-        from modules.uk.configs.isk_objazanie import CONFIG
-        return CONFIG
-    if doc_type == "os_obzhalovanie":
-        from modules.uk.configs.os_obzhalovanie import CONFIG
-        return CONFIG
-    if doc_type == "predsedatel":
-        from modules.uk.configs.predsedatel import CONFIG
-        return CONFIG
-    if doc_type == "avariynaya_komissiya":
-        from modules.uk.configs.avariynaya_komissiya import CONFIG
-        return CONFIG
-    if doc_type == "kapremont_vznosy":
-        from modules.uk.configs.kapremont_vznosy import CONFIG
-        return CONFIG
-    return None
-
+    """Импорт конфига по коду документа. Динамически через importlib."""
+    import importlib
+    if not doc_type or not doc_type.replace("_", "").isalnum():
+        return None
+    try:
+        mod = importlib.import_module(f"modules.uk.configs.{doc_type}")
+        return getattr(mod, "CONFIG", None)
+    except (ImportError, AttributeError):
+        return None
 
 _PROMPT_TEMPLATE = """Ты — модуль нормализации данных для юридического сервиса.
 Твоя задача: превратить неформальное описание проблемы от пользователя
