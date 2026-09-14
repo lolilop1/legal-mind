@@ -243,6 +243,20 @@ def _fake_get_article(region):
 app_module.get_article_for_region = _fake_get_article
 
 
+# ─── Мок: extract_region возвращает фикс для тестовых адресов ───
+_FAKE_REGIONS = {
+    "г. Москва, ул. Ленина, д. 15, кв. 42": "Москва",
+}
+_real_extract = app_module.extract_region
+
+def _fake_extract_region(addr):
+    if addr in _FAKE_REGIONS:
+        return _FAKE_REGIONS[addr]
+    return _real_extract(addr)
+
+app_module.extract_region = _fake_extract_region
+
+
 app = app_module.app
 app.config["TESTING"] = True
 

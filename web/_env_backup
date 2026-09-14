@@ -1,0 +1,7 @@
+﻿# Скопируй в .env и заполни своими значениями.
+# ВАЖНО: .env не должен попадать в git.
+
+YANDEX_API_KEY=AQVN2znEoxzWsNJ0_JV6EI3sHnRJEeHRr0Ao0Trm
+YANDEX_FOLDER_ID=b1gp8fb1dfuu671hv2t2
+AI_STUDIO_INDEX_ID=fvtct6n7t26743d6m88i
+SECRET_KEY=b14bd03725ee43402bc83c7e5ba88c0126d0e37986031e35304774f245bfe85b
