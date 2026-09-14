@@ -100,6 +100,28 @@
 
 **Правовые нормы:** ЗоЗПП (федеральный).
 
+### Категории (84)
+
+`modules/consumer/categories.py` — справочник товаров/услуг.
+
+Поля категории:
+- `code` — код (`smartphone`, `jacket`, `repair_flat`...)
+- `title` — название в родительном падеже (для PDF)
+- `keywords` — regex для авто-детекта
+- `group` — группа (Электроника / Одежда / Услуги / ...)
+- `tech_complex` — Пост. 924 (нельзя вернуть за 14 дней)
+
+**Группы:** Электроника, Бытовая техника, Одежда, Обувь, Мебель,
+Косметика, Продукты, Аптека, Ювелирка, Детские товары, Спорт,
+Стройматериалы, Авто, Услуги.
+
+**Авто-детект** `detect_category(text)` — по regex. Влияет на:
+- PDF-подзаголовок: «о возврате стоимости смартфона» вместо «товара»
+- LLM-hints: «КОНКРЕТНАЯ КАТЕГОРИЯ: смартфона. Сохрани название»
+- `tech_complex`: доп. hint про Пост. 924
+
+**Тесты:** `tests/test_consumer_categories.py` — 59 кейсов.
+
 ### 4 базовых сценария (авто-детект по тексту)
 
 | Сценарий | Ст. | Что |
@@ -201,7 +223,7 @@
   `scenario_detect.py`, `marketplaces.py`, `calculators.py`, `seller_kind.py`
 - `configs/defect.py`, `return14.py`, `marketplace.py`, `service.py`
 
-**Статус:** работает. 2118 проверок.
+**Статус:** работает. 2177 проверок.
 
 ---
 
@@ -316,7 +338,7 @@
 - `rag_mass_v4.py`, `rag_hardcode_fixed.py` — сбор базы регионов
 - `adversarial_tests.py` — 29 атакующих кейсов
 
-### tests/ — 29 файловов, 2118 проверок
+### tests/ — 30 файловов, 2177 проверок
 
 **Ядро (core):** test_case_id, test_case_db, test_address, test_name_declension, test_phone_check, test_trace, test_pre_checks, test_llm
 **UK:** test_uk_hardchecks (62), test_entity_check, test_pdf_generation

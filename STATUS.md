@@ -17,7 +17,7 @@ Legal Trace (этап 5)                   | OK
 Автодеплой (этап 8)                    | OK
 CI: Tests + Deploy + Smoke             | OK
 Модульная структура                    | OK
-Тесты (29 файловов, 2118 проверок)         | OK (2118/2118)
+Тесты (30 файловов, 2177 проверок)         | OK (2177/2177)
 UI-тесты (Playwright, 19)              | OK
 Adversarial (29 кейсов)                | OK (29/29)
 Домен + HTTPS                          | ждёт оплаты
@@ -27,7 +27,7 @@ Adversarial (29 кейсов)                | OK (29/29)
 ## Что сделано
 
 ### Модульность
-Модульная структура (core/region/modules/web/scripts/tests/docs/deploy). 29 файловов тестов, 2118 проверок.
+Модульная структура (core/region/modules/web/scripts/tests/docs/deploy). 30 файловов тестов, 2177 проверок.
 
 ### CASE (этап 3)
 core/case_db.py, core/case_id.py, web/schema.sql. Экран /my, карточка /case. core/labels.py.
@@ -45,10 +45,19 @@ RULES_DATE, TEMPLATE_VERSION. PDF-подвал. Блок в карточке.
 GitHub репо lolilop1/legal-mind. Deploy Key. deploy.yml через workflow_run — срабатывает ТОЛЬКО после зелёных Tests. Ручной deploy.ps1 остался как fallback.
 
 ### CI/CD (13.09.2026)
-- .github/workflows/test.yml — 2118 тестов на каждый push
+- .github/workflows/test.yml — 2177 тестов на каждый push
 - .github/workflows/deploy.yml — через workflow_run только после Tests
 - .github/workflows/smoke.yml — 6 сценариев против прода, понедельники 9:00 МСК + вручную
 - Бейджи в README (Tests, Deploy, Smoke)
+
+### Модуль 1 (Потребитель) — 84 категории (14.09.2026)
+
+- 84 категории в `modules/consumer/categories.py`
+- `detect_category()` — авто-детект (59 тестов)
+- PDF: «о возврате стоимости смартфона» вместо «товара»
+- UI-плашка «Определилось: смартфона — возврат/по браку»
+- Endpoint `/detect_category`
+- `tech_complex` — Пост. 924
 
 ### Модуль 2 (УК) — 181 тип документа (14.09.2026)
 
