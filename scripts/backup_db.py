@@ -160,6 +160,12 @@ def main() -> int:
     # Пароль проверим позже (Lockbox или fallback)
     # при вызове _get_backup_password()
 
+    # Пароль проверим позже (Lockbox или fallback)
+    # при вызове _get_backup_password()
+
+    # Пароль проверим позже (Lockbox или fallback)
+    # при вызове _get_backup_password()
+
     src = Path(CASE_DB_PATH)
     if not src.exists():
         log(f"FAIL: {src} не найден")
