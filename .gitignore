@@ -79,3 +79,8 @@ deploy/setup_backup.sh
 # Скриншоты (генерируются локально через scripts/make_screenshots.py)
 tests/screenshots/
 
+
+# Yandex Lockbox authorized key (ОЧЕНЬ секретно!)
+sa-key.json
+*-key.json
+
