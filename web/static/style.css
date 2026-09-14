@@ -1444,3 +1444,77 @@ textarea::placeholder {
 .lm-detected strong {
   font-weight: 700;
 }
+
+/* ═══ Карточки выбора требования ═══ */
+.demand-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.demand-card {
+  display: block;
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
+  margin: 0 !important;
+  position: relative;
+}
+
+.demand-card:hover {
+  border-color: #b9c9e8;
+  background: #fbfcff;
+}
+
+.demand-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.demand-card-active {
+  border-color: #2f6df5;
+  background: linear-gradient(180deg, #f5f9ff 0%, #eef4ff 100%);
+  box-shadow: 0 2px 8px rgba(47,109,245,0.10);
+}
+
+.demand-card-active::after {
+  content: "✓";
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 18px;
+  height: 18px;
+  background: #2f6df5;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.demand-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  padding-right: 24px;
+  line-height: 1.35;
+}
+
+.demand-card-meta {
+  font-size: 12px;
+  color: #7a8493;
+  margin-top: 3px;
+}
+
+@media (min-width: 600px) {
+  .demand-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -15,6 +15,7 @@ import re
 from core.llm import call_alice_flash
 from modules.consumer.categories import get_category, detect_category
 from modules.consumer.entity_check import check_consumer_numeric_recall
+from modules.consumer.demands import get_demand
 
 
 # ─── Какой конфиг использовать для какого сценария ───
@@ -79,8 +80,18 @@ _CORRECTIVE_NUMERIC = """Твой предыдущий ответ добавил
 Перепиши ответ БЕЗ этих значений. Если дата или цена не указана пользователем — не упоминай её вообще. Верни СТРОГО тот же JSON-формат."""
 
 
-def _build_prompt(config: dict, cat_data: dict | None = None) -> str:
+def _build_prompt(config: dict, cat_data: dict | None = None,
+                  chosen_demand: dict | None = None) -> str:
     hints_list = list(config["llm_hints"])
+    if chosen_demand:
+        # Требование выбрано юзером — LLM ОБЯЗАНА использовать его дословно
+        hints_list.insert(0,
+            "ПОЛЬЗОВАТЕЛЬ УЖЕ ВЫБРАЛ ТРЕБОВАНИЕ: «" +
+            chosen_demand["wording"] + "». "
+            "В поле \"требование\" верни ИМЕННО эту формулировку дословно. "
+            "НЕ добавляй альтернативы («либо», «или»), не предлагай "
+            "другие требования."
+        )
     if cat_data:
         hints_list.insert(0,
             "КОНКРЕТНАЯ КАТЕГОРИЯ: " + cat_data["title"] + ". "
@@ -146,7 +157,10 @@ def process_consumer(user_data: dict, scenario: str,
         category = detect_category(user_data.get("проблема", ""))
     cat_data = get_category(category) if category else None
 
-    prompt = _build_prompt(config, cat_data)
+    # Требование, выбранное юзером (если есть) — приоритет над LLM
+    chosen_demand = get_demand(user_data.get("требование_код", ""))
+
+    prompt = _build_prompt(config, cat_data, chosen_demand)
     user_msg = json.dumps(user_data, ensure_ascii=False)
 
     a1 = _call_llm(prompt, user_msg)
@@ -192,6 +206,10 @@ def process_consumer(user_data: dict, scenario: str,
             "message": "Модель вернула пустое описание",
             "retried": False,
         }
+
+    # ─── Жёсткая подмена требования, если юзер его выбрал ───
+    if chosen_demand:
+        parsed["требование"] = chosen_demand["wording"]
 
     # ─── Anti-hallucination: числа и даты только из user_data ───
     numeric_retried = False

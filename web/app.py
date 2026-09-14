@@ -720,6 +720,7 @@ def submit():
         user_data["цена"] = request.form.get("цена", "").strip()
         user_data["текущая_цена"] = request.form.get("текущая_цена", "").strip()
         user_data["дата_обращения"] = request.form.get("дата_обращения", "").strip()
+        user_data["требование_код"] = request.form.get("требование_код", "").strip()
 
         # Маркетплейс: автоподстановка юрадреса из справочника
         _mp = resolve_marketplace(user_data["продавец"])
@@ -765,6 +766,14 @@ def submit():
                     "на профиль/объявление — без этого претензию некуда "
                     "отправить."
                 )
+
+    # Требование для consumer (если сценарий распознан — требуем выбор)
+    if problem_type == "consumer":
+        _demand_code = request.form.get("требование_код", "").strip()
+        if _demand_code:
+            from modules.consumer.demands import get_demand
+            if get_demand(_demand_code) is None:
+                errors.append("Выбрано неизвестное требование — обновите страницу.")
 
     # 152-ФЗ: согласие на обработку ПДн — обязательно
     if not request.form.get("privacy_consent"):
@@ -922,7 +931,16 @@ def submit():
         }
         if calc:
             normalized["расчёт"] = calc
+        # Требование, выбранное юзером — идёт в PDF как источник истины
+        _demand_code = user_data.get("требование_код") or ""
+        if _demand_code:
+            from modules.consumer.demands import get_demand
+            _demand = get_demand(_demand_code)
+            if _demand:
+                normalized["требование_выбор"] = _demand
         extra_log = f"scenario={consumer_scenario}"
+        if _demand_code:
+            extra_log += f" | demand={_demand_code}"
         if calc:
             extra_log += f" | calc={calc['penalty']}"
     else:
@@ -1095,13 +1113,12 @@ def detect_category_route():
     text = request.form.get("text", "").strip()
     if not text:
         return {"code": None, "title": None}
-    from modules.consumer.categories import detect_category
+    from modules.consumer.categories import detect_category, get_category
     from modules.consumer.scenario_detect import detect_scenario
+    from modules.consumer.demands import list_for_scenario
     code = detect_category(text)
-    if not code:
-        return {"code": None, "title": None}
-    cat = get_category(code)
     scenario = detect_scenario(text) or "defect"
+    cat = get_category(code) if code else None
     scenario_labels = {
         "defect": "возврат/ремонт по браку",
         "return14": "возврат за 14 дней",
@@ -1113,6 +1130,7 @@ def detect_category_route():
         "title": cat["title"] if cat else None,
         "scenario": scenario,
         "scenario_label": scenario_labels.get(scenario, ""),
+        "demands": list_for_scenario(scenario),
     }
 
 

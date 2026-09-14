@@ -210,6 +210,23 @@
           </div>
         </div>
 
+        <!-- ─── Секция: Что требуете ─── -->
+        <div class="form-section" id="demand-section" style="display: none;">
+          <div class="form-section-head">
+            <span class="form-section-icon">⚖️</span>
+            <div>
+              <div class="form-section-title">Что требуете от продавца</div>
+              <div class="form-section-sub">Выберите ОДНО требование — претензия должна быть конкретной</div>
+            </div>
+          </div>
+
+          <input type="hidden" name="требование_код" id="demand-code-input" value="{{ form_data.get('требование_код', '') if form_data else '' }}">
+          <div class="demand-cards" id="demand-cards"></div>
+          <div class="lm-field-error" id="demand-error" style="display: none;">
+            Выберите требование — без этого претензия не имеет юридической силы
+          </div>
+        </div>
+
         <!-- ─── Секция: Дата обращения ─── -->
         <div class="form-section">
           <div class="form-section-head">
@@ -375,6 +392,16 @@ function lmGetProblemType() {
         var seller = step.querySelector('input[name="продавец"]');
         var sellerAddr = step.querySelector('input[name="адрес_продавца"]');
         var sellerLink = step.querySelector('input[name="ссылка_продавца"]');
+        var demandCode = document.getElementById('demand-code-input');
+        var demandErr = document.getElementById('demand-error');
+        // Требование обязательно, если секция отрисована (авто-детект сработал)
+        if (demandSection && demandSection.style.display !== 'none') {
+          if (!demandCode || !demandCode.value) {
+            ok = false;
+            if (demandErr) demandErr.style.display = 'block';
+            if (!firstBad) firstBad = demandCards;
+          }
+        }
 
         var sellerVal = seller.value.trim();
         var addrVal = sellerAddr ? sellerAddr.value.trim() : '';
@@ -548,10 +575,67 @@ function lmGetProblemType() {
             detectBox.style.display = 'none';
           }
         }
+        // Рендерим требования, если пришли
+        if (type === 'consumer' && Array.isArray(j.demands)) {
+          lmRenderDemands(j.demands);
+        }
       })
       .catch(function() {
         detectBox.style.display = 'none';
       });
+  }
+
+  // ─── Рендер карточек требований ───
+  var demandSection = document.getElementById('demand-section');
+  var demandCards = document.getElementById('demand-cards');
+  var demandCodeInput = document.getElementById('demand-code-input');
+  var demandError = document.getElementById('demand-error');
+
+  function lmRenderDemands(demands) {
+    if (!demandCards || !demandSection) return;
+    if (!demands || !demands.length) {
+      demandSection.style.display = 'none';
+      return;
+    }
+    demandCards.innerHTML = '';
+    var current = demandCodeInput ? demandCodeInput.value : '';
+
+    demands.forEach(function(d) {
+      var card = document.createElement('label');
+      card.className = 'demand-card';
+      if (current === d.code) card.classList.add('demand-card-active');
+
+      var radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'требование_radio';
+      radio.value = d.code;
+      if (current === d.code) radio.checked = true;
+
+      var title = document.createElement('div');
+      title.className = 'demand-card-title';
+      title.textContent = d.label;
+
+      var meta = document.createElement('div');
+      meta.className = 'demand-card-meta';
+      meta.textContent = 'Срок: ' + d.deadline_days + ' дн. (' + d.deadline_legal + ')';
+
+      card.appendChild(radio);
+      card.appendChild(title);
+      card.appendChild(meta);
+
+      radio.addEventListener('change', function() {
+        if (demandCodeInput) demandCodeInput.value = d.code;
+        document.querySelectorAll('.demand-card').forEach(function(c) {
+          c.classList.remove('demand-card-active');
+        });
+        card.classList.add('demand-card-active');
+        if (demandError) demandError.style.display = 'none';
+      });
+
+      demandCards.appendChild(card);
+    });
+
+    demandSection.style.display = 'block';
   }
 
   if (problemTextarea) {

@@ -41,6 +41,7 @@ _TESTS = [
     "test_consumer_scenario.py",
     "test_consumer_engine.py",
     "test_consumer_entity_check.py",
+    "test_consumer_demands.py",
     "test_consumer_categories.py",
     "test_marketplaces.py",
     "test_calculators.py",

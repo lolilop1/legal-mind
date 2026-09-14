@@ -343,12 +343,32 @@ def generate_pdf(output_path: str, requisites: dict, normalized: dict,
     if not demand:
         demand = "удовлетворить мои законные требования как потребителя"
 
+    # Если юзер выбрал требование — используем его wording как п.1
+    _chosen_wording = (normalized.get("требование_выбор") or {}).get("wording")
+    if _chosen_wording:
+        demand = _chosen_wording
+
     # Пункт 1 — требование потребителя
     _mc(pdf, 5.5, f"    1. {demand[0].upper() + demand[1:]}.", align="J")
     pdf.ln(1)
 
-    # Пункт 2 — срок из конфига (если нашли совпадение)
-    if config:
+    # Пункт 2 — срок из формы (требование_выбор) или из конфига
+    _chosen = (normalized.get("требование_выбор") or {})
+    if _chosen.get("deadline_days"):
+        # Юзер выбрал требование сам — берём его срок и формулировку
+        deadline = _chosen["deadline_days"]
+        legal = _chosen.get("deadline_legal", "")
+        legal_part = f" ({legal})" if legal else ""
+        _mc(
+            pdf, 5.5,
+            f"    2. Удовлетворить требование в течение {deadline} "
+            f"календарных дней{legal_part} с момента получения "
+            f"настоящей претензии.",
+            align="J",
+        )
+        pdf.ln(1)
+    elif config:
+        # Fallback (для старых кейсов без выбора) — по тексту требования
         primary_demand = _match_demand_option(demand, config)
         if not primary_demand and config.get("demand_options"):
             primary_demand = config["demand_options"][0]
