@@ -25,8 +25,14 @@ jobs:
           script: |
             set -e
             cd /opt/legal_mind
+
+            # Запоминаем предыдущий рабочий коммит для отката
+            PREV=$(git rev-parse HEAD)
+            echo "PREV=$PREV"
+
             git fetch origin main
             git reset --hard origin/main
+
             chown -R legal:legal .
             chmod 600 web/.env
             chmod 755 core region modules web deploy scripts
@@ -36,7 +42,26 @@ jobs:
             # git не всегда сохраняет x-бит (особенно на Windows-репах)
             chmod 755 scripts/run_backup.sh
             chown legal:legal scripts/run_backup.sh
+
             systemctl restart legal-mind
             sleep 3
-            curl -sf http://127.0.0.1:5000/health || (echo "HEALTH FAIL" && exit 1)
-            echo "DEPLOY OK"
+
+            # ─── Health-check новой версии ───
+            if curl -sf http://127.0.0.1:5000/health >/dev/null; then
+              echo "DEPLOY OK (HEAD=$(git rev-parse --short HEAD))"
+              exit 0
+            fi
+
+            # ─── Провал → откат на PREV ───
+            echo "::warning::HEALTH FAIL after deploy — rolling back to $PREV"
+            git reset --hard "$PREV"
+            systemctl restart legal-mind
+            sleep 3
+
+            if curl -sf http://127.0.0.1:5000/health >/dev/null; then
+              echo "::error::DEPLOY ROLLED BACK to $PREV — prod works on OLD version, fix the new one"
+              exit 1
+            fi
+
+            echo "::error::CRITICAL: rollback failed too — service is DOWN"
+            exit 2
