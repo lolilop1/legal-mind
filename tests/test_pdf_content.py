@@ -486,6 +486,9 @@ def main():
           "шум: тема — тишина/покой")
     check("Москв" in txt, "шум: регион Москва в PDF (закон)")
     check("ПРОШУ" in txt, "шум: блок ПРОШУ")
+    # Статья из noise_articles.json для Москвы — «Статья 3. Административная ответственность...»
+    check("Статья 3" in txt or "статья 3" in txt,
+          f"шум: статья 3 закона Москвы в PDF", txt[-500:])
 
     # ═══ 3. Defect + расчёт ═══
     txt = _submit_and_get_pdf(client, DEFECT_FORM)

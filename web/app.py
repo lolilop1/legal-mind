@@ -61,7 +61,7 @@ from core.labels import problem_type_label, doc_type_label
 from core.address import format_address
 
 from region.extractor import extract_region
-from region.db_client import get_law_for_region
+from region.db_client import get_law_for_region, get_article_for_region
 
 
 API_KEY = os.getenv("YANDEX_API_KEY", "")
@@ -456,6 +456,7 @@ def process_noise(user_data: dict) -> dict:
     address = user_data.get("адрес", "")
     region = extract_region(address)
     law_data = get_law_for_region(region) if region else None
+    article = get_article_for_region(region) if region else None
 
     return {
         "kind": "ok",
@@ -464,6 +465,7 @@ def process_noise(user_data: dict) -> dict:
         "stop_kind": None,
         "region": region,
         "law_data": law_data,
+        "article": article,
     }
 
 
@@ -885,6 +887,7 @@ def submit():
             extra_log += f" | calc={calc['penalty']}"
     else:
         law_data = result.get("law_data")
+        article = result.get("article")
         normalized = {
             "описание_проблемы_формальное": parsed["описание_проблемы_формальное"],
             "engine_version": _build_engine_version(problem_type),
@@ -892,7 +895,10 @@ def submit():
             "template_version": TEMPLATE_VERSION,
         }
         if law_data:
-            normalized["применимая_норма"] = law_data["закон"]
+            law_str = law_data["закон"]
+            if article:
+                law_str = f"{law_str}, {article}"
+            normalized["применимая_норма"] = law_str
         region = result.get("region") or "?"
         law_status = "law=yes" if law_data else "law=no"
         extra_log = f"region={region} | {law_status}"
