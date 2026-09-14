@@ -63,9 +63,9 @@ def main():
     check("1064" in " ".join(D["allowed_norms"]), "damage: 1064 ГК")
 
     # 5b. all 16 configs загружаются
-    codes = ["uk","gzhi","rpn","prokuratura","damage","pereraschet",
-             "zapros_info","kvitancia","ads","tszh","kapremont",
-             "municipality","act","s_o_s","rastorzhenie","snizhenie"]
+    import os
+    codes = sorted([f[:-3] for f in os.listdir("modules/uk/configs")
+                    if f.endswith(".py") and f != "__init__.py"])
     for code in codes:
         cfg = uk_engine._get_config(code)
         check(cfg is not None and cfg.get("code") == code,
