@@ -1082,6 +1082,35 @@ def download_case_pdf(case_ref: str, doc_id: int):
     )
 
 
+@app.route("/detect_category", methods=["POST"])
+def detect_category_route():
+    """Авто-детект категории товара/услуги по тексту (для UI)."""
+    if not _check_csrf():
+        return {"error": "csrf"}, 400
+    text = request.form.get("text", "").strip()
+    if not text:
+        return {"code": None, "title": None}
+    from modules.consumer.categories import detect_category
+    from modules.consumer.scenario_detect import detect_scenario
+    code = detect_category(text)
+    if not code:
+        return {"code": None, "title": None}
+    cat = get_category(code)
+    scenario = detect_scenario(text) or "defect"
+    scenario_labels = {
+        "defect": "возврат/ремонт по браку",
+        "return14": "возврат за 14 дней",
+        "marketplace": "претензия к маркетплейсу",
+        "service": "претензия по услуге",
+    }
+    return {
+        "code": code,
+        "title": cat["title"] if cat else None,
+        "scenario": scenario,
+        "scenario_label": scenario_labels.get(scenario, ""),
+    }
+
+
 @app.route("/detect_doc_type", methods=["POST"])
 def detect_doc_type_route():
     """Авто-детект типа документа по тексту (для UI-подсказки)."""

@@ -516,18 +516,37 @@ function lmGetProblemType() {
       detectBox.style.display = 'none';
       return;
     }
+    var type = lmGetProblemType();
+    // Для шума — не детектим (там один тип)
+    if (type === 'noise') {
+      detectBox.style.display = 'none';
+      return;
+    }
+    var endpoint = (type === 'consumer') ? '/detect_category' : '/detect_doc_type';
     var csrf = form.querySelector('input[name="_csrf_token"]').value;
     var fd = new FormData();
     fd.append('_csrf_token', csrf);
     fd.append('text', text);
-    fetch('/detect_doc_type', { method: 'POST', body: fd })
+    fetch(endpoint, { method: 'POST', body: fd })
       .then(function(r) { return r.json(); })
       .then(function(j) {
-        if (j.code && j.title) {
-          detectTitle.textContent = j.title;
-          detectBox.style.display = 'flex';
+        if (type === 'consumer') {
+          if (j.code && j.title) {
+            var label = j.scenario_label
+              ? ('Потребитель: ' + j.title + ' — ' + j.scenario_label)
+              : ('Потребитель: ' + j.title);
+            detectTitle.textContent = label;
+            detectBox.style.display = 'flex';
+          } else {
+            detectBox.style.display = 'none';
+          }
         } else {
-          detectBox.style.display = 'none';
+          if (j.code && j.title) {
+            detectTitle.textContent = j.title;
+            detectBox.style.display = 'flex';
+          } else {
+            detectBox.style.display = 'none';
+          }
         }
       })
       .catch(function() {
@@ -538,6 +557,16 @@ function lmGetProblemType() {
   if (problemTextarea) {
     problemTextarea.addEventListener('blur', lmDetectType);
   }
+
+  // При смене типа проблемы — сбрасываем плашку (или перезапрашиваем)
+  form.querySelectorAll('input[name="problem_type"]').forEach(function(r) {
+    r.addEventListener('change', function() {
+      if (detectBox) detectBox.style.display = 'none';
+      if (problemTextarea && problemTextarea.value.trim().length >= 15) {
+        setTimeout(lmDetectType, 100);
+      }
+    });
+  });
 
   // Инициализация видимости полей по типу
   window.lmOnTypeChange(lmGetProblemType());
