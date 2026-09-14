@@ -6,9 +6,20 @@
 
 - `scripts/backup_db.py`:
   1. `sqlite3 .backup()` — атомарная копия БД (безопасно при читателях)
-  2. gzip
-  3. upload в `s3://legal-mind-backups/daily/cases_YYYY-MM-DD_HHMMSS.db.gz`
-  4. cleanup объектов старше `BACKUP_RETENTION_DAYS` дней (по умолчанию 30)
+  2. gzip (compresslevel 9)
+  3. **шифрование `openssl enc -aes-256-cbc -pbkdf2 -iter 100000`**
+  4. upload в `s3://legal-mind-backups/daily/cases_YYYY-MM-DD_HHMMSS.db.gz.enc`
+  5. cleanup объектов старше `BACKUP_RETENTION_DAYS` дней (по умолчанию 30)
+
+**Почему шифрование:** в `cases.db` — ПДн (ФИО, адрес, телефон,
+суть конфликта). S3 — чужое облако, даже приватный бакет = не наш
+контроль. Шифруем **до** upload, чтобы даже утечка ключей S3 не
+дала доступа к данным.
+
+**Пароль** — в `.env.backup` (`BACKUP_ENCRYPTION_PASSWORD`).
+Сгенерирован `openssl rand -base64 32`. Хранить в менеджере
+паролей (Bitwarden/KeePass). **Без пароля бэкапы не расшифровать
+никогда.**
 
 ## Конфиг на сервере
 
@@ -61,18 +72,33 @@
 
 ## Восстановление из бэкапа
 
-Скачать:
+Скачать последний `.enc` (через Python-скрипт на сервере):
 
-    cd /tmp
-    aws --endpoint-url=https://storage.yandexcloud.net \
-        s3 cp s3://legal-mind-backups/daily/cases_YYYY-MM-DD_HHMMSS.db.gz . \
-        --profile yc
+    cd /opt/legal_mind
+    sudo -u legal ./venv/bin/python -c "
+    import boto3, os
+    from dotenv import load_dotenv
+    load_dotenv('.env.backup')
+    s3 = boto3.client('s3', endpoint_url='https://storage.yandexcloud.net',
+        aws_access_key_id=os.getenv('YC_S3_KEY_ID'),
+        aws_secret_access_key=os.getenv('YC_S3_SECRET'), region_name='ru-central1')
+    r = s3.list_objects_v2(Bucket=os.getenv('YC_S3_BUCKET'), Prefix='daily/')
+    items = sorted(r.get('Contents', []), key=lambda x: x['LastModified'])
+    s3.download_file(os.getenv('YC_S3_BUCKET'), items[-1]['Key'], '/tmp/backup.enc')
+    print('OK:', items[-1]['Key'])
+    "
 
-(или через консоль Object Storage)
+Расшифровать (пароль из .env.backup):
+
+    cd /opt/legal_mind
+    PWD=$(grep '^BACKUP_ENCRYPTION_PASSWORD=' .env.backup | cut -d= -f2)
+    openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 \
+        -in /tmp/backup.enc -out /tmp/backup.db.gz \
+        -pass "pass:$PWD"
 
 Распаковать:
 
-    gunzip cases_YYYY-MM-DD_HHMMSS.db.gz
+    gunzip /tmp/backup.db.gz
 
 Остановить сервис, положить файл, запустить:
 
