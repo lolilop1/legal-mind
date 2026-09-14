@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import gzip
 import os
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
@@ -34,6 +35,7 @@ YC_S3_SECRET = os.getenv("YC_S3_SECRET", "")
 YC_S3_BUCKET = os.getenv("YC_S3_BUCKET", "legal-mind-backups")
 CASE_DB_PATH = os.getenv("CASE_DB_PATH") or str(_DEFAULT_DB)
 RETENTION_DAYS = int(os.getenv("BACKUP_RETENTION_DAYS", "30"))
+BACKUP_PASSWORD = os.getenv("BACKUP_ENCRYPTION_PASSWORD", "")
 
 ENDPOINT = "https://storage.yandexcloud.net"
 PREFIX = "daily/"
@@ -63,6 +65,27 @@ def gzip_file(src: Path) -> Path:
     with open(src, "rb") as f_in, gzip.open(dst, "wb", compresslevel=9) as f_out:
         f_out.write(f_in.read())
     src.unlink()
+    return dst
+
+
+def encrypt_file(src: Path, password: str) -> Path:
+    """Шифрует .gz в .gz.enc через openssl aes-256-cbc + pbkdf2."""
+    if not password:
+        raise RuntimeError("BACKUP_ENCRYPTION_PASSWORD не задан в .env.backup")
+
+    dst = src.with_suffix(src.suffix + ".enc")
+    # -pbkdf2 -iter 100000 → защита от брутфорса пароля
+    cmd = [
+        "openssl", "enc", "-aes-256-cbc", "-pbkdf2", "-iter", "100000",
+        "-salt",
+        "-in", str(src),
+        "-out", str(dst),
+        "-pass", f"pass:{password}",
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    if res.returncode != 0:
+        raise RuntimeError(f"openssl failed: {res.stderr}")
+    src.unlink()  # удаляем незашифрованный .gz
     return dst
 
 
@@ -120,13 +143,21 @@ def main() -> int:
 
         log("gzip...")
         tmp_gz = gzip_file(tmp_db)
-        size_kb = tmp_gz.stat().st_size // 1024
-        log(f"сжатый размер: {size_kb} КБ")
+        size_gz_kb = tmp_gz.stat().st_size // 1024
+        log(f"сжатый размер: {size_gz_kb} КБ")
+
+        log("encrypt (aes-256-cbc)...")
+        tmp_enc = encrypt_file(tmp_gz, BACKUP_PASSWORD)
+        size_enc_kb = tmp_enc.stat().st_size // 1024
+        log(f"зашифрованный размер: {size_enc_kb} КБ")
+
+        # Меняем расширение в ключе: .db.gz -> .db.gz.enc
+        key = key + ".enc" if not key.endswith(".enc") else key
 
         log(f"upload -> s3://{YC_S3_BUCKET}/{key}")
         try:
             s3 = s3_client()
-            upload(s3, tmp_gz, key)
+            upload(s3, tmp_enc, key)
         except ClientError as e:
             log(f"FAIL upload: {e}")
             return 1
