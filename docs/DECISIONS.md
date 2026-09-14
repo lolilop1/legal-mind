@@ -408,7 +408,7 @@ optional «Доказательство недостатка».
 
 **Решение:** три GitHub Actions workflow.
 
-1. **test.yml** — на каждый push прогоняет все 810 тестов на чистой
+1. **test.yml** — на каждый push прогоняет все 2118 тестов на чистой
    Ubuntu 24.04 + Python 3.12 + chromium (Playwright). Артефакты
    (логи, PDF) загружаются при падении.
 
@@ -772,7 +772,7 @@ case_ref, можно было перебором doc_id скачать чужи�
 - modules/ — uk, noise, consumer
 - web/ — Flask
 - scripts/ — разовые утилиты
-- tests/ — 12 файлов
+- tests/ — 29 файлов
 - docs/ — документация
 - deploy/ — инфраструктура
 

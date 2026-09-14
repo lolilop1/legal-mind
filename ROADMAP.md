@@ -84,7 +84,7 @@
 
 - GitHub репозиторий
 - SSH Deploy Key (read-only)
-- .github/workflows/test.yml — 1327 тестов на push + Playwright UI
+- .github/workflows/test.yml — 2118 тестов на push + Playwright UI
 - .github/workflows/deploy.yml — через workflow_run, только после Tests
 - .github/workflows/smoke.yml — 6 сценариев против прода, понедельники + вручную
 - Actions: checkout@v5, setup-python@v6, upload-artifact@v5

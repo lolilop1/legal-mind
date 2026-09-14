@@ -17,7 +17,7 @@ Legal Trace (этап 5)                   | OK
 Автодеплой (этап 8)                    | OK
 CI: Tests + Deploy + Smoke             | OK
 Модульная структура                    | OK
-Тесты (26 файлов, 2118 проверок)         | OK (2118/2118)
+Тесты (29 файловов, 2118 проверок)         | OK (2118/2118)
 UI-тесты (Playwright, 19)              | OK
 Adversarial (29 кейсов)                | OK (29/29)
 Домен + HTTPS                          | ждёт оплаты
@@ -27,7 +27,7 @@ Adversarial (29 кейсов)                | OK (29/29)
 ## Что сделано
 
 ### Модульность
-Модульная структура (core/region/modules/web/scripts/tests/docs/deploy). 26 файлов тестов, 2118 проверок.
+Модульная структура (core/region/modules/web/scripts/tests/docs/deploy). 29 файловов тестов, 2118 проверок.
 
 ### CASE (этап 3)
 core/case_db.py, core/case_id.py, web/schema.sql. Экран /my, карточка /case. core/labels.py.

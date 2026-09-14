@@ -86,7 +86,7 @@ PDF отдаётся пользователю
     │   └── .env
     │
     ├── scripts/                 — утилиты + smoke
-    ├── tests/                   — 26 файлов, 1327 проверок
+    ├── tests/                   — 29 файловов, 2118 проверок
     ├── docs/                    — документация
     ├── deploy/                  — инфраструктура
     └── .github/workflows/       — CI/CD
@@ -189,7 +189,7 @@ YandexGPT Pro                   | RAG (разово)
 ## CI/CD
 
 ### test.yml
-Push → GitHub Actions → 1327 тестов на Python 3.12 + chromium (Playwright).
+Push → GitHub Actions → 2118 тестов на Python 3.12 + chromium (Playwright).
 Actions: `checkout@v5`, `setup-python@v6`, `upload-artifact@v5`.
 Если красное — деплой не запустится.
 

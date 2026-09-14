@@ -205,6 +205,23 @@
 
 ---
 
+## Авто-детект типа документа
+
+`modules/uk/doc_detect.py` — определяет тип по тексту описания.
+Юзер пишет «холодные батареи» → система сама подставляет
+`holodnye_batarei` с нужными нормами (Пост. 354).
+
+**Как работает:** словарь `{code: regex}` — 130+ паттернов,
+первое совпадение выигрывает. Специфичные проверки сверху
+(затопление соседа перед общим затоплением).
+
+**Когда включается:** форма отправляет `auto_detect=1`.
+Без флага — default `uk` (не ломает прод).
+
+**Тесты:** `tests/test_uk_doc_detect.py` — 45 кейсов.
+
+---
+
 ## Что можно добавить в модуль УК
 
 Модуль уже покрывает 181 тип. Что ещё теоретически можно:
@@ -299,7 +316,7 @@
 - `rag_mass_v4.py`, `rag_hardcode_fixed.py` — сбор базы регионов
 - `adversarial_tests.py` — 29 атакующих кейсов
 
-### tests/ — 26 файлов, 2118 проверок
+### tests/ — 29 файловов, 2118 проверок
 
 **Ядро (core):** test_case_id, test_case_db, test_address, test_name_declension, test_phone_check, test_trace, test_pre_checks, test_llm
 **UK:** test_uk_hardchecks (62), test_entity_check, test_pdf_generation
