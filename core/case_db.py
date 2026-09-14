@@ -40,6 +40,12 @@ def _get_conn() -> sqlite3.Connection:
     _conn.row_factory = sqlite3.Row
     _conn.execute("PRAGMA foreign_keys = ON")
     _conn.execute("PRAGMA busy_timeout = 5000")
+    # WAL — читатели не блокируют писателя, писатель не блокирует читателей.
+    # Безопасно при 2 воркерах gunicorn + бэкап в фоне.
+    _conn.execute("PRAGMA journal_mode = WAL")
+    # NORMAL — компромисс между скоростью и надёжностью.
+    # При сбое питания рискуем последними транзакциями (не всей БД).
+    _conn.execute("PRAGMA synchronous = NORMAL")
     return _conn
 
 
