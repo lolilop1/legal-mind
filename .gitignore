@@ -96,3 +96,6 @@ _patch.py
 _audit.py
 _extract.py
 _debug.py
+
+# Контекст для чатов
+_CONTEXT_*.md
