@@ -108,23 +108,42 @@
     chmod 600 /opt/legal_mind/web/cases.db
     systemctl start legal-mind
 
-## В планах: Yandex Lockbox
+## Пароль шифрования: Yandex Lockbox
 
-**Идея:** убрать `.env.backup` и тянуть пароль шифрования из
-**Yandex Lockbox** через service account (Yandex Cloud SDK).
+**Работает с 14.09.2026.** Пароль шифрования НЕ хранится в
+`.env.backup` — тянется из Yandex Lockbox по REST API.
 
-**Плюс:**
-- Секреты в одном вендоре (S3 + LLM + Lockbox)
-- Ротация пароля через Lockbox UI (без SSH)
+**Компоненты:**
+- `core/lockbox.py` — чтение секретов через REST API
+  (`payload.lockbox.api.cloud.yandex.net`), без SDK.
+  IAM-токен кэшируется на 11 часов (живёт 12)
+- Авторизация: authorized key сервисного аккаунта
+  `legal-mind-backup` (`/opt/legal_mind/sa-key.json`, chmod 600)
+- Secret ID: `e6qoscc5gjf12n81vsf9`
+- Ключ в секрете: `BACKUP_ENCRYPTION_PASSWORD`
+- Fallback: если Lockbox недоступен, `backup_db.py` берёт пароль
+  из `BACKUP_ENCRYPTION_PASSWORD` в `.env.backup` (на сервере не задан,
+  остаётся на случай аварии)
+
+**Обёртка `scripts/run_backup.sh`:** cron зовёт её, а не python напрямую.
+Она делает `cd` в корень проекта + `exec` python из venv.
+Это устраняет проблему «то работает, то нет» — гонку с автодеплоем
+`git reset --hard` (файл на секунду пропадает).
+
+**Ротация пароля:** через UI Lockbox. При ротации создаётся **новая
+версия** секрета. Старые бэкапы расшифровываются **старой версией**,
+новые — новой. Если надо сохранить доступ к старым — не удаляй
+предыдущие версии секрета.
+
+**Плюсы:**
+- `.env.backup` не содержит пароль шифрования
+- Ротация через Lockbox UI (без SSH)
 - Аудит доступа к секретам
-- Тот же подход для `YANDEX_API_KEY` в `web/.env`
-
-**Когда:** когда будет время + второй сервер. Сейчас `.env.backup`
-с `chmod 600` работает нормально.
+- Тот же паттерн можно применить к `YANDEX_API_KEY` в `web/.env`
 
 **Осторожно:** если потерять доступ к Yandex Cloud аккаунту —
 потеряешь и S3, и Lockbox одновременно. Одна копия пароля
-где-то **вне** Yandex (в голове/бумажке) — не помешает.
+где-то **вне** Yandex (в Bitwarden/KeePass) — обязательна.
 
 ## Что НЕ бэкапится
 

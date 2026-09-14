@@ -1,5 +1,34 @@
 # Legal Mind — Changelog
 
+## 2026-09-14 (Lockbox для пароля шифрования бэкапов)
+
+### Добавлено
+- `core/lockbox.py` — чтение секретов из Yandex Lockbox через
+  REST API (pyjwt + requests, без SDK). IAM-токен кэшируется на 11 часов
+- `scripts/backup_db.py`: `_get_backup_password()` — пароль
+  тянется из Lockbox, fallback на `.env.backup`
+- `scripts/run_backup.sh` — bash-обёртка для cron (cd + exec,
+  защита от гонки с автодеплоем)
+- Yandex Cloud: секрет `legal-mind-backup-password`
+  (ID: e6qoscc5gjf12n81vsf9) с ключом `BACKUP_ENCRYPTION_PASSWORD`
+- Authorized key сервисного аккаунта `legal-mind-backup`
+  (chmod 600, `/opt/legal_mind/sa-key.json`, в .gitignore)
+
+### Изменено
+- `.env.backup` — теперь только `YC_S3_*`, пароль убран
+- Cron `/etc/cron.d/legal-mind-backup` — зовёт `run_backup.sh`
+
+### Грабли
+- Lockbox: endpoint `payload.lockbox.api.cloud.yandex.net`,
+  не `lockbox.api.cloud.yandex.net`
+- `backup_db.py` не находил `core.lockbox` при запуске от sudo -
+  решение через bash-обёртку `run_backup.sh`
+
+### Тесты
+- 761/761 зелёные
+
+---
+
 ## 2026-09-14 (security: шифрование бэкапов + WAL для SQLite)
 
 ### Security

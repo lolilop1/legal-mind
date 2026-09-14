@@ -95,7 +95,7 @@ GitHub репо lolilop1/legal-mind. Deploy Key. deploy.yml через workflow_
 - **152-ФЗ** — чекбокс согласия + страница `/privacy` +
   серверная проверка. +6 тестов.
 - **Бэкапы** — `cases.db` в Yandex Object Storage, **зашифрованы
-  aes-256-cbc**, cron 03:00 UTC,
+  aes-256-cbc**, пароль из **Yandex Lockbox**, cron 03:00 UTC,
   retention 30 дней. `scripts/backup_db.py`. `docs/BACKUP.md`.
 - **Дедуп** `_is_legal_entity` → `modules/consumer/seller_kind.py`
   (единая точка правды для Python). +37 тестов.

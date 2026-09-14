@@ -110,9 +110,26 @@ service, подтипы распознаются regex. Юзер не долже
 Без этого `openssl enc` использует слабый KDF (MD5-based, 1 итерация),
 брутфорсить можно миллионы паролей в секунду.
 
-**Почему пароль в `.env.backup`, а не в Yandex Lockbox:** пока
-не готовы тащить Yandex Cloud SDK. Когда будет второй сервер —
-переедем на Lockbox (см. `docs/BACKUP.md`).
+**Почему пароль в Yandex Lockbox (обновление от 14.09):**
+
+Изначально был в `.env.backup`, но потом переехал в Lockbox:
+- `.env.backup` не содержит пароль — только `YC_S3_*`
+- Ротация через Lockbox UI (без SSH)
+- Тот же паттерн пойдёт для `YANDEX_API_KEY`
+
+**Реализация без SDK:** SDK `yandexcloud` версии 0.406 имеет
+Lockbox-стабы, но не удобные обёртки. Сделали через **REST API**:
+- JWT (pyjwt + PS256) → IAM-токен → `GET payload.lockbox.api.cloud.yandex.net/...`
+- IAM-токен кэшируется на 11 часов (живёт 12)
+- Авторизация — authorized key сервисного аккаунта
+
+**Грабли:**
+1. Эндпоинт не `lockbox.api.cloud.yandex.net`, а
+   **`payload.lockbox.api.cloud.yandex.net`** — легко ошибиться
+2. `backup_db.py` не находил `core.lockbox` — не был `sys.path.insert`.
+   Но `sys.path.insert` не помог (гонка с деплоем). Решение — bash-обёртка
+   `scripts/run_backup.sh` с `cd + exec`.
+3. Cron зовёт **обёртку**, не python напрямую.
 
 **Проверено:** `.enc` скачивается, расшифровывается, читается
 SQLite — 12 дел на месте.
