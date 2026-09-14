@@ -101,12 +101,15 @@ def detect_scenario(problem: str) -> str | None:
     if _SERVICE.search(problem):
         return "service"
 
-    # 3. Товар не подошёл
-    if _RETURN14.search(problem):
-        return "return14"
+    # 3-4. Приоритет: если есть ЯВНЫЕ признаки недостатка (сломан,
+    # брак, не работает) — это defect (ст. 18), а не return14 (ст. 25).
+    # «Хочу вернуть сломанный» ≠ «не подошёл по размеру».
+    _has_defect_signal = _DEFECT.search(problem)
+    _has_return14_signal = _RETURN14.search(problem)
 
-    # 4. Товар сломан
-    if _DEFECT.search(problem):
+    if _has_defect_signal:
         return "defect"
+    if _has_return14_signal:
+        return "return14"
 
     return None
