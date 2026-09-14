@@ -14,6 +14,10 @@
 - Authorized key сервисного аккаунта `legal-mind-backup`
   (chmod 600, `/opt/legal_mind/sa-key.json`, в .gitignore)
 
+### Обновлено
+- GitHub Actions: `checkout@v5`, `setup-python@v6`,
+  `upload-artifact@v5` (Node.js 20 → 24)
+
 ### Изменено
 - `.env.backup` — теперь только `YC_S3_*`, пароль убран
 - Cron `/etc/cron.d/legal-mind-backup` — зовёт `run_backup.sh`
@@ -92,7 +96,7 @@
 
 ## 2026-09-14 (Security-аудит: CSRF, rate limit, 152-ФЗ, бэкапы, дедуп)
 
-Закрыто 9 из 11 пунктов внешнего аудита.
+Закрыто 10 из 11 пунктов внешнего аудита.
 
 ### Добавлено
 
@@ -258,7 +262,7 @@
 
 ### CI/CD
 
-- `.github/workflows/test.yml` — 644 теста на каждый push + Playwright
+- `.github/workflows/test.yml` — 761 тестов на каждый push + Playwright
 - `.github/workflows/deploy.yml` — через `workflow_run`, только после Tests
 - `.github/workflows/smoke.yml` — 6 сценариев против прода,
   понедельники 9:00 МСК + вручную
@@ -631,7 +635,7 @@
 - SSH Deploy Key на сервере
 - .github/workflows/deploy.yml — GitHub Actions
 - Три секрета: SSH_HOST, SSH_USER, SSH_PRIVATE_KEY
-- git push → 30 секунд до прода
+- git push → 1.5 минуты до прода
 
 ---
 

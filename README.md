@@ -93,20 +93,20 @@ Python 3.12+, Flask, gunicorn, nginx, systemd, fpdf2, pypdf, pymorphy3, Alice AI
 ## Проверка после изменений
 
 **Автоматически (CI):**
-- GitHub Actions гоняет все **676 тестов** на каждый push
+- GitHub Actions гоняет все **761 тестов** на каждый push
 - Если тесты красные — на прод не уедет
 - **Smoke-тест** (6 сценариев с реальным LLM) — понедельники 9:00 МСК + вручную
 
 **Локально (когда хочешь):**
 
-    python tests\run_all.py               # 676 тестов, ~30 сек
+    python tests\run_all.py               # 761 тестов, ~30 сек
     python tests\test_ui_playwright.py     # UI в headless Chromium
     .\scripts\run_smoke.ps1               # 6 сценариев с реальным LLM
     .\scripts\run_smoke.ps1 -Against prod # против прода
 
 ## Деплой
 
-`git push` → автодеплой за 30-60 сек.
+`git push` → автодеплой за 1.5 минуты.
 
 ## Ссылки
 
@@ -116,7 +116,7 @@ STATUS.md, ROADMAP.md, docs/.
 
 ## Безопасность
 
-Пройден внешний аудит (13-14.09.2026). Закрыто 9 из 11 пунктов.
+Пройден внешний аудит (13-14.09.2026). Закрыто 10 из 11 пунктов.
 
 ### Доступ и данные
 - **IDOR** в `/case/<ref>/pdf/<id>` закрыт — фильтр по (doc_id, case_number)
@@ -143,9 +143,12 @@ STATUS.md, ROADMAP.md, docs/.
 - Страница `/privacy` с политикой конфиденциальности
 - Серверная проверка согласия — без него форма не принимается
 
-### Бэкапы
-- Ежедневный бэкап `cases.db` в Yandex Object Storage
-- Cron на сервере: 03:00 UTC (06:00 МСК)
+### Бэкапы и SQLite
+- Ежедневный бэкап `cases.db` в Yandex Object Storage (cron 03:00 UTC)
+- **Шифрование бэкапов** — `openssl enc -aes-256-cbc -pbkdf2 -iter 100000`
+- **Пароль — в Yandex Lockbox** (REST API, `core/lockbox.py`, IAM-кэш 11 ч)
+- **Обёртка `scripts/run_backup.sh`** — cron зовёт её (защита от гонки с деплоем)
+- **WAL для SQLite** — `PRAGMA journal_mode=WAL`, `synchronous=NORMAL`
 - Retention: 30 дней (ротация автоматическая)
 - SQLite `.backup()` — атомарно, безопасно при параллельных читателях
 - Инструкция: `docs/BACKUP.md`

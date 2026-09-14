@@ -143,10 +143,11 @@ PDF отдаётся пользователю
 ### Сейчас
 - `region/data/noise_laws.db` — SQLite, 85 законов
 - `region/data/embeddings.json` — 85 векторов (405 КБ)
-- `web/cases.db` — SQLite, CASE + PDF + события + calculation (JSON)
+- `web/cases.db` — SQLite (WAL), CASE + PDF + события + calculation (JSON)
 - `/opt/legal_mind/logs/requests.log` — метаданные запросов (без ПДн)
-- `s3://legal-mind-backups/daily/` — ежедневные бэкапы cases.db
-  (retention 30 дней, cron 03:00 UTC)
+- `s3://legal-mind-backups/daily/` — ежедневные бэкапы cases.db,
+  **зашифрованы** `aes-256-cbc -pbkdf2 -iter 100000`, пароль в
+  Yandex Lockbox (retention 30 дней, cron 03:00 UTC)
 
 ### Планируется
 - Миграция на Yandex Managed PostgreSQL (когда будет нагрузка)
@@ -164,7 +165,7 @@ YandexGPT Pro                   | RAG (разово)
 
 ## Безопасность
 
-Пройден внешний аудит (13-14.09.2026), закрыто 9 из 11.
+Пройден внешний аудит (13-14.09.2026), закрыто 10 из 11.
 
 - HTTPS через Let's Encrypt (после домена)
 - .env + .env.backup — права 600, не в git
@@ -178,12 +179,18 @@ YandexGPT Pro                   | RAG (разово)
 - **CSRF** — токен в session + hmac.compare_digest
 - **Rate limiting** — nginx `limit_req` + Python in-memory (50/сутки)
 - **152-ФЗ** — чекбокс согласия + /privacy + серверная проверка
-- **Бэкапы cases.db** — ежедневно в Yandex Object Storage (cron)
+- **Бэкапы cases.db** — ежедневно в Yandex Object Storage (cron),
+  **зашифрованы** aes-256-cbc, пароль из Yandex Lockbox
+- **WAL для SQLite** — `PRAGMA journal_mode=WAL`, `synchronous=NORMAL`
+- **Lockbox** — `core/lockbox.py`, REST API
+  (`payload.lockbox.api.cloud.yandex.net`), IAM-токен кэш 11 ч
+- **Обёртка `scripts/run_backup.sh`** для cron (защита от гонки с деплоем)
 
 ## CI/CD
 
 ### test.yml
-Push → GitHub Actions → 644 теста на Python 3.12 + chromium (Playwright).
+Push → GitHub Actions → 761 тестов на Python 3.12 + chromium (Playwright).
+Actions: `checkout@v5`, `setup-python@v6`, `upload-artifact@v5`.
 Если красное — деплой не запустится.
 
 ### deploy.yml

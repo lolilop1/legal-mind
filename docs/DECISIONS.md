@@ -85,6 +85,34 @@ service, подтипы распознаются regex. Юзер не долже
 
 ---
 
+## 2026-09-14 — Lockbox для пароля шифрования + Actions v5/v6
+
+**Контекст:** пароль шифрования бэкапов лежал в `.env.backup` — рядом
+с ключами S3. Если что-то утечёт из файла — утекут и ключи S3, и пароль.
+Плюс ротация пароля требует SSH на сервер.
+
+**Решение:** пароль переехал в **Yandex Lockbox** (`core/lockbox.py`).
+
+**Почему через REST API, а не SDK:** SDK `yandexcloud` 0.406 имеет
+Lockbox-стабы, но без удобных обёрток. Сделали через REST:
+JWT (pyjwt + PS256) → IAM-токен → `GET .../payload`. IAM-токен
+кэшируется на 11 часов (живёт 12).
+
+**Грабли:**
+1. Эндпоинт не `lockbox.api.cloud.yandex.net`, а
+   **`payload.lockbox.api.cloud.yandex.net`** — легко ошибиться.
+2. `backup_db.py` не находил `core.lockbox` при запуске из cron.
+   Решение — bash-обёртка `scripts/run_backup.sh` с `cd + exec`.
+
+**Fallback:** если Lockbox недоступен, `backup_db.py` берёт пароль
+из `BACKUP_ENCRYPTION_PASSWORD` в `.env.backup` (на сервере не задан).
+
+**Actions обновлены:** `checkout@v5`, `setup-python@v6`,
+`upload-artifact@v5` — переход Node.js 20 → 24 (v4-версии
+скоро перестанут работать).
+
+---
+
 ## 2026-09-14 — Шифрование бэкапов + WAL для SQLite
 
 **Контекст:** внешний аудит показал две дыры:
@@ -319,7 +347,7 @@ optional «Доказательство недостатка».
 
 **Решение:** три GitHub Actions workflow.
 
-1. **test.yml** — на каждый push прогоняет все 644 теста на чистой
+1. **test.yml** — на каждый push прогоняет все 761 тестов на чистой
    Ubuntu 24.04 + Python 3.12 + chromium (Playwright). Артефакты
    (логи, PDF) загружаются при падении.
 

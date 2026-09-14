@@ -5,11 +5,16 @@
 ## Что делает
 
 - `scripts/backup_db.py`:
-  1. `sqlite3 .backup()` — атомарная копия БД (безопасно при читателях)
+  1. `sqlite3 .backup()` — атомарная копия БД (корректно работает при WAL)
   2. gzip (compresslevel 9)
   3. **шифрование `openssl enc -aes-256-cbc -pbkdf2 -iter 100000`**
   4. upload в `s3://legal-mind-backups/daily/cases_YYYY-MM-DD_HHMMSS.db.gz.enc`
   5. cleanup объектов старше `BACKUP_RETENTION_DAYS` дней (по умолчанию 30)
+
+**WAL:** `cases.db` работает в режиме WAL (`PRAGMA journal_mode=WAL`,
+`synchronous=NORMAL`). Это значит, что рядом есть `cases.db-wal` и
+`cases.db-shm`. SQLite `.backup()` учитывает их автоматически — бэкап
+получается полным и консистентным.
 
 **Почему шифрование:** в `cases.db` — ПДн (ФИО, адрес, телефон,
 суть конфликта). S3 — чужое облако, даже приватный бакет = не наш

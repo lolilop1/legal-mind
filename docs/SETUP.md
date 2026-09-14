@@ -181,11 +181,14 @@ python -c "import secrets; print(secrets.token_hex(32))"
 ## Бэкапы cases.db
 
 Ежедневно в Yandex Object Storage (`s3://legal-mind-backups/daily/`),
-cron 03:00 UTC. Инструкция по развёртыванию и восстановлению —
-`docs/BACKUP.md`.
+cron 03:00 UTC. **Зашифрованы** `aes-256-cbc -pbkdf2 -iter 100000`.
+Инструкция по развёртыванию и восстановлению — `docs/BACKUP.md`.
 
-Секреты бэкапа — в `/opt/legal_mind/.env.backup` (chmod 600, не в git),
-отдельно от боевых ключей `web/.env`.
+- **Пароль шифрования** — в Yandex Lockbox (`core/lockbox.py`, REST API).
+  Fallback — `BACKUP_ENCRYPTION_PASSWORD` в `.env.backup`.
+- **Cron зовёт** `scripts/run_backup.sh` (bash-обёртка с cd + exec) —
+  защита от гонки с автодеплоем.
+- Секреты S3 — в `/opt/legal_mind/.env.backup` (chmod 600, не в git).
 
 Проверка:
 
@@ -196,18 +199,25 @@ cron 03:00 UTC. Инструкция по развёртыванию и восс
     cd /opt/legal_mind
     sudo -u legal ./venv/bin/python scripts/backup_db.py
 
+WAL для SQLite включается автоматически в `core/case_db.py`
+(`PRAGMA journal_mode=WAL`). Ничего настраивать не нужно.
+
 ## CSRF, rate limiting, 152-ФЗ
 
-- **CSRF** — токен в session, скрытое поле в форме. Без токена → 400.
-- **Rate limiting** — nginx `limit_req` (1 r/m на /submit)
-  + Python (50 дел/сутки на IP). При превышении → 429.
-- **152-ФЗ** — обязательный чекбокс согласия, страница `/privacy`.
+- **CSRF** — токен в session, скрытое поле `_csrf_token` в форме.
+  Сравнение через `hmac.compare_digest`. Без токена → 400.
+- **Rate limiting** — двойной слой:
+  - nginx `limit_req` (1 r/m на /submit, 5 r/s общий)
+  - Python in-memory (50 дел/сутки на IP). При превышении → 429.
+- **152-ФЗ** — обязательный чекбокс согласия, страница `/privacy`,
+  серверная проверка (без согласия форма не принимается).
 
 ## Автоматические проверки (CI)
 
 На каждый `git push` GitHub Actions запускает:
 
-- **test.yml** — 644 теста + Playwright UI на чистой Ubuntu 24.04.
+- **test.yml** — 761 тестов + Playwright UI на чистой Ubuntu 24.04.
+  Actions: `checkout@v5`, `setup-python@v6`, `upload-artifact@v5`.
   Если красное — на прод не уедет.
 - **deploy.yml** — срабатывает через `workflow_run` только после
   успешного Tests.

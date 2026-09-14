@@ -17,12 +17,17 @@
 
 ### Security-аудит ✅ (13-14.09.2026)
 
-- IDOR в /case/pdf закрыт
-- CSRF-защита формы
-- Rate limiting (nginx + Python)
-- 152-ФЗ: согласие + /privacy
-- Бэкапы cases.db в Object Storage (cron)
+Закрыто 10 из 11 пунктов внешнего аудита.
+
+- IDOR в /case/pdf закрыт — фильтр по (doc_id, case_number)
+- CSRF-защита формы — токен в session + hmac.compare_digest
+- Rate limiting — nginx `limit_req` + Python in-memory (50/сутки на IP)
+- 152-ФЗ: чекбокс согласия + /privacy + серверная проверка
+- Бэкапы cases.db — **зашифрованы** aes-256-cbc, пароль в Lockbox
+- WAL для SQLite — `PRAGMA journal_mode=WAL`, `synchronous=NORMAL`
 - Дедуп _is_legal_entity → seller_kind
+
+**Осталось:** шифрование cases.db at rest (SQLCipher), HTTPS (ждёт домена).
 
 ## Этап 1 — Домен + HTTPS ⏳
 
@@ -78,11 +83,19 @@
 ## Этап 8 — Автодеплой ✅
 
 - GitHub репозиторий
-- SSH Deploy Key
-- .github/workflows/test.yml — 644 теста на push
+- SSH Deploy Key (read-only)
+- .github/workflows/test.yml — 761 тестов на push + Playwright UI
 - .github/workflows/deploy.yml — через workflow_run, только после Tests
 - .github/workflows/smoke.yml — 6 сценариев против прода, понедельники + вручную
-- git push → 30-60 сек до прода
+- Actions: checkout@v5, setup-python@v6, upload-artifact@v5
+- git push → 1.5 минуты до прода
+
+### Бэкапы + шифрование ✅ (14.09.2026)
+- Ежедневный бэкап `cases.db` в Yandex Object Storage (cron 03:00 UTC)
+- **Шифрование** `aes-256-cbc -pbkdf2 -iter 100000` перед загрузкой
+- **Пароль в Yandex Lockbox** (`core/lockbox.py`, REST API)
+- **WAL для SQLite** — читатели не блокируют писателя
+- Retention 30 дней, обёртка `scripts/run_backup.sh` для cron
 
 ## Этап 9 — Email-отправка PDF 💤
 

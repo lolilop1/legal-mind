@@ -161,15 +161,6 @@ def main() -> int:
         log("FAIL: YC_S3_KEY_ID / YC_S3_SECRET не заданы в .env.backup")
         return 1
 
-    # Пароль проверим позже (Lockbox или fallback)
-    # при вызове _get_backup_password()
-
-    # Пароль проверим позже (Lockbox или fallback)
-    # при вызове _get_backup_password()
-
-    # Пароль проверим позже (Lockbox или fallback)
-    # при вызове _get_backup_password()
-
     src = Path(CASE_DB_PATH)
     if not src.exists():
         log(f"FAIL: {src} не найден")

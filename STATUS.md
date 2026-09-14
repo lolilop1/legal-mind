@@ -1,6 +1,6 @@
 # Статус проекта Legal Mind
 
-Дата: 2026-09-13
+Дата: 2026-09-14
 
 ## Краткая сводка
 
@@ -45,7 +45,7 @@ RULES_DATE, TEMPLATE_VERSION. PDF-подвал. Блок в карточке.
 GitHub репо lolilop1/legal-mind. Deploy Key. deploy.yml через workflow_run — срабатывает ТОЛЬКО после зелёных Tests. Ручной deploy.ps1 остался как fallback.
 
 ### CI/CD (13.09.2026)
-- .github/workflows/test.yml — 644 теста на каждый push
+- .github/workflows/test.yml — 761 тестов на каждый push
 - .github/workflows/deploy.yml — через workflow_run только после Tests
 - .github/workflows/smoke.yml — 6 сценариев против прода, понедельники 9:00 МСК + вручную
 - Бейджи в README (Tests, Deploy, Smoke)
@@ -84,6 +84,9 @@ GitHub репо lolilop1/legal-mind. Deploy Key. deploy.yml через workflow_
 - Cookie flags: HttpOnly, SameSite=Lax, Secure-условно
 - ProxyFix для правильного IP
 - ПДн убраны из логов (только len=N)
+- **WAL для SQLite** — `PRAGMA journal_mode=WAL`, `synchronous=NORMAL`
+- **Шифрование бэкапов** — `aes-256-cbc -pbkdf2 -iter 100000`, пароль из Lockbox
+- **Yandex Lockbox** — `core/lockbox.py`, REST API, IAM-токен кэш 11 ч
 
 ### Security-аудит (13-14.09.2026)
 Внешний аудит — закрыто 10 из 11 пунктов.

@@ -223,8 +223,15 @@
 - **152-ФЗ** — обязательный чекбокс согласия на обработку ПДн,
   страница `/privacy`, серверная проверка. Без согласия форма не
   принимается.
-- **Бэкапы** — `cases.db` ежедневно в Yandex Object Storage
+- **Бэкапы** — `cases.db` ежедневно в Yandex Object Storage,
+  **зашифрованы** `aes-256-cbc -pbkdf2 -iter 100000`
   (`scripts/backup_db.py`, cron 03:00 UTC, retention 30 дней).
+- **Пароль шифрования** — в **Yandex Lockbox** (`core/lockbox.py`,
+  REST API, IAM-токен кэшируется на 11 ч). Fallback — `.env.backup`.
+- **Обёртка `scripts/run_backup.sh`** — cron зовёт её, а не python
+  напрямую (защита от гонки с автодеплоем).
+- **WAL для SQLite** — `PRAGMA journal_mode=WAL`,
+  `synchronous=NORMAL`. Читатели не блокируют писателя.
 - **IDOR** — доступ к PDF по паре (doc_id, case_number).
 - `name_declension.py` — склонение ФИО (pymorphy3, дательный + родительный)
 - `phone_check.py` — валидация и нормализация телефона
