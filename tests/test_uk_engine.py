@@ -3,6 +3,7 @@
 
 import _bootstrap  # noqa: F401
 
+from pathlib import Path
 from unittest.mock import patch
 
 import modules.uk.engine as uk_engine
@@ -64,8 +65,8 @@ def main():
 
     # 5b. all 16 configs загружаются
     import os
-    codes = sorted([f[:-3] for f in os.listdir("modules/uk/configs")
-                    if f.endswith(".py") and f != "__init__.py"])
+    _CONFIGS_DIR = Path(__file__).resolve().parent.parent / "modules" / "uk" / "configs"
+    codes = sorted([f.stem for f in _CONFIGS_DIR.glob("*.py") if f.name != "__init__.py"])
     for code in codes:
         cfg = uk_engine._get_config(code)
         check(cfg is not None and cfg.get("code") == code,

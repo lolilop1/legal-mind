@@ -82,8 +82,8 @@ def main():
     # 7. Все 16 конфигов генерируют PDF
     import modules.uk.engine as eng
     import os
-    codes = sorted([f[:-3] for f in os.listdir("modules/uk/configs")
-                    if f.endswith(".py") and f != "__init__.py"])
+    _CONFIGS_DIR = Path(__file__).resolve().parent.parent / "modules" / "uk" / "configs"
+    codes = sorted([f.stem for f in _CONFIGS_DIR.glob("*.py") if f.name != "__init__.py"])
     for code in codes:
         cfg = eng._get_config(code)
         try:
