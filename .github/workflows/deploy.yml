@@ -29,9 +29,13 @@ jobs:
             git reset --hard origin/main
             chown -R legal:legal .
             chmod 600 web/.env
-            chmod 755 core region modules web deploy
+            chmod 755 core region modules web deploy scripts
             chmod -R 755 web/static
             find web/static -type f -exec chmod 644 {} \;
+            # Обёртка backup для cron — обязательно executable,
+            # git не всегда сохраняет x-бит (особенно на Windows-репах)
+            chmod 755 scripts/run_backup.sh
+            chown legal:legal scripts/run_backup.sh
             systemctl restart legal-mind
             sleep 3
             curl -sf http://127.0.0.1:5000/health || (echo "HEALTH FAIL" && exit 1)
