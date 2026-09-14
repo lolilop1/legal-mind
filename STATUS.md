@@ -86,7 +86,7 @@ GitHub репо lolilop1/legal-mind. Deploy Key. deploy.yml через workflow_
 - ПДн убраны из логов (только len=N)
 
 ### Security-аудит (13-14.09.2026)
-Внешний аудит — закрыто 9 из 11 пунктов.
+Внешний аудит — закрыто 10 из 11 пунктов.
 
 - **CSRF** — токен в session (hmac.compare_digest), скрытое поле
   `_csrf_token` в форме, 400 при провале. +5 тестов.
@@ -94,7 +94,8 @@ GitHub репо lolilop1/legal-mind. Deploy Key. deploy.yml через workflow_
   `/submit`) + Python in-memory (50 дел/сутки на IP). +5 тестов.
 - **152-ФЗ** — чекбокс согласия + страница `/privacy` +
   серверная проверка. +6 тестов.
-- **Бэкапы** — `cases.db` в Yandex Object Storage, cron 03:00 UTC,
+- **Бэкапы** — `cases.db` в Yandex Object Storage, **зашифрованы
+  aes-256-cbc**, cron 03:00 UTC,
   retention 30 дней. `scripts/backup_db.py`. `docs/BACKUP.md`.
 - **Дедуп** `_is_legal_entity` → `modules/consumer/seller_kind.py`
   (единая точка правды для Python). +37 тестов.

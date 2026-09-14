@@ -1,5 +1,35 @@
 # Legal Mind — Changelog
 
+## 2026-09-14 (security: шифрование бэкапов + WAL для SQLite)
+
+### Security
+
+**Шифрование бэкапов cases.db:**
+- `scripts/backup_db.py`: `encrypt_file()` через
+  `openssl enc -aes-256-cbc -pbkdf2 -iter 100000`
+- Пароль в `.env.backup` (BACKUP_ENCRYPTION_PASSWORD)
+- Ключ в S3: `cases_YYYY-MM-DD_HHMMSS.db.gz.enc`
+- Старые `.db.gz` (без шифрования) удалены из бакета
+- Проверено: `.enc` расшифровывается, SQLite читается (12 дел)
+
+**WAL для SQLite:**
+- `core/case_db.py`: `PRAGMA journal_mode=WAL`
+- `PRAGMA synchronous=NORMAL`
+- Читатели не блокируют писателя — безопасно при 2 воркерах
+  gunicorn + фоновый backup
+
+### Документация
+- `docs/BACKUP.md`: раздел про шифрование + обновлённая инструкция
+  восстановления + «В планах: Lockbox»
+- `docs/DECISIONS.md`: +1 решение
+- `IDEAS.md`: банк идей (маршрутизатор, пре-документы, next_step,
+  калькуляторы, узкие ниши, монетизация)
+
+### Тесты
+- 761/761 зелёные
+
+---
+
 ## 2026-09-14 (UI: hero, карточки типа, секции формы)
 
 ### Добавлено
