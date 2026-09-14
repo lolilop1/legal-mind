@@ -20,7 +20,7 @@ CI: Tests + Deploy + Smoke             | OK
 Тесты (32 файла, 2298 проверок)             | OK (2298/2298)
 UI-тесты (Playwright, 19)              | OK
 Adversarial (29 кейсов)                | OK (29/29)
-Домен + HTTPS                          | ждёт оплаты
+Домен + HTTPS (legalmind.su)           | OK
 Модуль 1 (Потребитель, 4 сценария)     | OK + расширения
 Обкатка мини-тестерами                 | идёт
 
@@ -185,6 +185,18 @@ HTTPS (ждёт домена).
 - Timer Trigger `*/5 * * * ? *`
 - Инструкция: `deploy/health_check/README.md`
 
+### Домен + HTTPS + почта (14.09.2026, ночь)
+
+- **Домен legalmind.su** — зарегистрирован на reg.ru
+- **A-записи** `@` и `www` → 201.24.49.121
+- **HTTPS** — Let's Encrypt, срок до 13.12.2026, автопродление
+- **HTTP → HTTPS** — редирект в nginx
+- **nginx.conf** — обновлён в репо (SSL + rate limiting)
+- **Secure-cookie** — `SESSION_COOKIE_SECURE=true` на сервере
+- **Почта info@legalmind.su** — Яндекс 360 для бизнеса
+- **MX, SPF, DKIM** — настроены в reg.ru
+- **Отображаемое имя** — «Legal Mind», подпись настроена
+
 ### Документация
 README, STATUS, ROADMAP, docs/ARCHITECTURE, DECISIONS, MODULES, CHANGELOG, SETUP, web/README — все синхронизированы с кодом.
 
@@ -201,7 +213,7 @@ README, STATUS, ROADMAP, docs/ARCHITECTURE, DECISIONS, MODULES, CHANGELOG, SETUP
 
 ## Что дальше
 
-1. Домен + HTTPS (этап 1)
+1. Домен + HTTPS — ✅ сделано 14.09.2026
 2. Оставшиеся пункты Модуля 1: инверсия смысла (LLM «есть»→«отсутствуют»), cap ст. 23
 3. Этап 12: один CASE → много документов (претензия → иск → жалоба в РПН)
 4. Email-отправка PDF (этап 9)

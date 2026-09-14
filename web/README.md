@@ -1,7 +1,7 @@
 # Legal Mind — Web
 
 Веб-приложение: HTML-форма → PDF-документ.
-Прод: http://201.24.49.121/
+Прод: https://legalmind.su/
 
 ## Как пользоваться
 
@@ -42,6 +42,8 @@
 
 - Провайдер: Timeweb Cloud
 - IP: 201.24.49.121
+- Домен: legalmind.su
+- Почта: info@legalmind.su
 - ОС: Ubuntu 22.04 / 24.04
 - Процесс-менеджер: systemd (legal-mind.service)
 - Веб-сервер: nginx (reverse proxy на 127.0.0.1:5000)
@@ -71,9 +73,10 @@ GitHub Actions → SSH на сервер → git pull → restart → health che
 
 ## Переменные окружения (.env)
 
-    YANDEX_API_KEY   — API-ключ Yandex Cloud
-    YANDEX_FOLDER_ID — folder ID Yandex Cloud
-    SECRET_KEY       — Flask session
+    YANDEX_API_KEY         — API-ключ Yandex Cloud
+    YANDEX_FOLDER_ID       — folder ID Yandex Cloud
+    SECRET_KEY             — Flask session
+    SESSION_COOKIE_SECURE  — true (HTTPS включён)
 
 Ключ получается в Yandex Cloud: сервисный аккаунт → роль ai.languageModels.user → API-ключ.
 
@@ -108,4 +111,4 @@ GitHub Actions → SSH на сервер → git pull → restart → health che
 
 - Собрать реальные кейсы от 5-10 знакомых по всем 3 модулям
 - По результатам — доработки
-- Домен legalmind.su + HTTPS через Let's Encrypt
+- ~~Домен legalmind.su + HTTPS~~ — ✅ сделано 14.09.2026

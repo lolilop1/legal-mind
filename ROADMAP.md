@@ -29,13 +29,15 @@
 
 **Осталось:** шифрование cases.db at rest (SQLCipher), HTTPS (ждёт домена).
 
-## Этап 1 — Домен + HTTPS ⏳
+## Этап 1 — Домен + HTTPS ✅
 
-- Купить legalmind.su (199 ₽)
-- A-запись → 201.24.49.121
-- nginx server_name
-- Let's Encrypt HTTPS
-- SESSION_COOKIE_SECURE=true
+- ✅ legalmind.su на reg.ru
+- ✅ A-записи `@` и `www` → 201.24.49.121
+- ✅ nginx server_name + SSL блок
+- ✅ Let's Encrypt HTTPS (до 13.12.2026, автопродление)
+- ✅ HTTP → HTTPS редирект
+- ✅ SESSION_COOKIE_SECURE=true
+- ✅ Почта info@legalmind.su (Яндекс 360, MX/SPF/DKIM)
 
 ## Этап 2 — Обкатка 🔄
 

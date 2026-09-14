@@ -6,9 +6,9 @@
 
 Веб-сервис для физических лиц. Превращает неформальное описание бытовой проблемы в готовый юридический документ (PDF).
 
-**Работает:** http://201.24.49.121/
+**Работает:** https://legalmind.su/
 **Репозиторий:** https://github.com/lolilop1/legal-mind (приватный)
-**Домен:** legalmind.su (ждёт оплаты)
+**Почта:** info@legalmind.su
 
 ## Что работает
 
@@ -175,8 +175,8 @@ STATUS.md, ROADMAP.md, docs/.
 - **Логи без ПДн** — длина адреса, не сам адрес
 
 ### Cookie и HTTPS
-- **Cookie сессии** — HttpOnly, SameSite=Lax, Secure (включается при HTTPS)
-- **HTTPS** — ждёт домена legalmind.su
+- **Cookie сессии** — HttpOnly, SameSite=Lax, **Secure=true** (HTTPS включён)
+- **HTTPS** — Let's Encrypt, автопродление, до 13.12.2026
 
 ### 152-ФЗ (персональные данные)
 - Обязательный чекбокс согласия на обработку ПДн в форме
@@ -203,3 +203,11 @@ STATUS.md, ROADMAP.md, docs/.
 - Tests на каждый push (2298 проверок + Playwright)
 - Deploy через `workflow_run` — только после зелёных Tests
 - Smoke против прода по понедельникам
+
+### Домен и почта
+- **legalmind.su** — A-записи на reg.ru → 201.24.49.121
+- **HTTPS** — Let's Encrypt, авто-продление (certbot timer)
+- **HTTP → HTTPS** — 301 редирект в nginx
+- **info@legalmind.su** — Яндекс 360 для бизнеса
+- **MX / SPF / DKIM** — настроены, письма не в спам
+- **Отображаемое имя** — «Legal Mind»

@@ -322,6 +322,75 @@ python scripts/rag_mass_v4.py        (полный прогон, ~380 ₽)
 python scripts/rag_hardcode_fixed.py (12 регионов ручной правки)
 python scripts/build_embeddings.py   (пересборка эмбеддингов, ~5 ₽)
 
+## Домен + HTTPS + почта
+
+### Домен
+
+- **legalmind.su** — на reg.ru
+- NS-серверы reg.ru (`ns1.reg.ru`, `ns2.reg.ru`) — **не делегируем**,
+  оставляем зону на reg.ru
+- A-записи в зоне:
+  - `@` → `201.24.49.121`
+  - `www` → `201.24.49.121`
+
+### HTTPS (Let's Encrypt)
+
+Разово, после того как домен разошёлся (nslookup выдаёт правильный IP):
+
+    sudo apt update
+    sudo apt install -y certbot python3-certbot-nginx
+    sudo certbot --nginx -d legalmind.su -d www.legalmind.su
+
+Certbot:
+- спросит email → твой
+- `(A)gree` → `A`
+- EFF рассылка → `N`
+- редирект HTTP→HTTPS → `2` (Redirect)
+
+Автопродление:
+
+    sudo certbot renew --dry-run
+
+**ВАЖНО:** `certbot --nginx` **сносит** `limit_req_zone` из конфига.
+После Certbot обязательно проверь `/etc/nginx/sites-available/legal-mind`
+и верни блок `limit_req_zone` (см. `deploy/nginx.conf`).
+
+**Аварийное восстановление:** если nginx сломался — скопируй
+`deploy/nginx.conf` из репо на сервер:
+
+    sudo cp /opt/legal_mind/deploy/nginx.conf /etc/nginx/sites-available/legal-mind
+    sudo nginx -t
+    sudo systemctl reload nginx
+
+### Secure-cookie
+
+В `/opt/legal_mind/web/.env` на сервере:
+
+    SESSION_COOKIE_SECURE=true
+
+Рестарт:
+
+    systemctl restart legal-mind
+
+### Почта info@legalmind.su
+
+Яндекс 360 для бизнеса, тариф «Минимальный» (319 ₽/мес).
+
+**DNS-записи (в reg.ru, зона остаётся на reg.ru):**
+
+| Тип | Subdomain | Значение | Приоритет |
+|---|---|---|---|
+| MX | `@` | `mx.yandex.net.` | 10 |
+| TXT | `@` | `v=spf1 redirect=_spf.yandex.net` | — |
+| TXT | `mail._domainkey` | `v=DKIM1; k=rsa; t=s; p=MIGf...` | — |
+
+DKIM-значение — уникальное, выдаётся при подключении домена в Яндекс 360.
+
+**Проверка:**
+
+- Письмо наружу (Gmail) → во «Входящих», SPF PASS, DKIM PASS
+- Ответ снаружи → приходит в `info@legalmind.su`
+
 ## Что дальше
 
 - README.md — обзор проекта

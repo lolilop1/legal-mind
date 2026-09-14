@@ -1,5 +1,48 @@
 # Legal Mind — Changelog
 
+## 2026-09-14 (ночь: домен + HTTPS + почта)
+
+### Добавлено
+
+**Домен legalmind.su**
+- Зарегистрирован на reg.ru
+- A-записи `@` и `www` → 201.24.49.121
+- NS reg.ru, зона управляется через панель reg.ru
+
+**HTTPS (Let's Encrypt)**
+- Сертификат получен через `certbot --nginx`
+- Срок действия до 13.12.2026
+- Автопродление (certbot systemd timer)
+- HTTP → HTTPS: 301 редирект в nginx
+- nginx.conf обновлён в репо (`deploy/nginx.conf`) — для аварийного восстановления
+
+**Secure-cookie**
+- `SESSION_COOKIE_SECURE=true` в `/opt/legal_mind/web/.env`
+- Cookie сессии: Secure + HttpOnly + SameSite=Lax
+
+**Почта info@legalmind.su**
+- Яндекс 360 для бизнеса
+- MX: `mx.yandex.net` (приоритет 10)
+- SPF: `v=spf1 redirect=_spf.yandex.net`
+- DKIM: mail._domainkey (RSA 1024-bit)
+- Отображаемое имя: «Legal Mind»
+- Подпись: «С уважением, команда Legal Mind» + legalmind.su + info@legalmind.su
+
+### Исправлено
+
+- **nginx.conf после Certbot** — восстановлен rate limiting
+  (`limit_req_zone general/submit`), потерянный при `certbot --nginx`
+- **`.env` склейка** — `echo >>` дописал флаг к `SECRET_KEY` без
+  перевода строки. Починили через Python. SECRET_KEY цел (64 hex).
+- **`web/_env_backup`** — удалён из git, добавлен в `.gitignore`
+
+### Известно
+
+- `web/_env_backup` был в git-истории (коммит caddb56).
+  Репо приватный, риск низкий.
+
+---
+
 ## 2026-09-14 (вечер: фиксы ред-тима + выбор требования)
 
 ### Добавлено

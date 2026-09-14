@@ -5,7 +5,8 @@
 Пользователь (браузер, телефон)
         |
         v
-[nginx] — HTTPS, статика, reverse proxy
+[nginx] — HTTPS (Let's Encrypt), статика, reverse proxy,
+         HTTP→HTTPS редирект, rate limiting
         |
         v
 [gunicorn, 2 воркера] — WSGI
@@ -172,19 +173,49 @@ Alice AI Flash                  | Нормализация текста
 Yandex Text Embeddings          | Определение региона
 Yandex Search API               | Сбор базы регионов (разово)
 YandexGPT Pro                   | RAG (разово)
+Yandex 360 (Почта)              | info@legalmind.su
+Let's Encrypt                   | HTTPS-сертификат
+reg.ru                          | Домен legalmind.su + DNS
+
+## Домен, HTTPS, почта
+
+### Домен
+- **legalmind.su** — reg.ru
+- NS-серверы reg.ru (`ns1.reg.ru`, `ns2.reg.ru`) — **зона
+  остаётся на reg.ru**, не делегируем
+- A-записи: `@` и `www` → `201.24.49.121`
+
+### HTTPS
+- **Let's Encrypt**, до 13.12.2026, автопродление (certbot timer)
+- HTTP → HTTPS: 301 редирект в nginx
+- Конфиг nginx хранится в `deploy/nginx.conf` (для восстановления)
+
+### Rate limiting (nginx)
+- `general`: 5 r/s per IP (burst 10) — все запросы
+- `submit`: 1 r/m per IP (burst 3) — форма (LLM + PDF = деньги)
+
+⚠️ **Грабли:** `certbot --nginx` сносит `limit_req_zone` — их надо
+восстанавливать вручную после каждой правки nginx.
+
+### Почта
+- **info@legalmind.su** — Яндекс 360 для бизнеса
+- MX: `mx.yandex.net` (10)
+- SPF: `v=spf1 redirect=_spf.yandex.net`
+- DKIM: `mail._domainkey` (RSA 1024)
+- Отображаемое имя: «Legal Mind»
 
 ## Безопасность
 
 Пройден внешний аудит (13-14.09.2026), закрыто 10 из 11.
 
-- HTTPS через Let's Encrypt (после домена)
+- HTTPS — Let's Encrypt, автопродление, до 13.12.2026 (legalmind.su)
 - .env + .env.backup — права 600, не в git
 - Отдельный пользователь `legal` для gunicorn
 - gunicorn слушает только на 127.0.0.1:5000
 - Логи без ПДн
 - Deploy Key — read-only
 - SECRET_KEY обязателен
-- Cookie: HttpOnly, SameSite=Lax, Secure (при HTTPS)
+- Cookie: HttpOnly, SameSite=Lax, Secure=true (HTTPS включён)
 - IDOR закрыт в `/case/<ref>/pdf/<id>` (фильтр по case_number)
 - **CSRF** — токен в session + hmac.compare_digest
 - **Rate limiting** — nginx `limit_req` + Python in-memory (50/сутки)
