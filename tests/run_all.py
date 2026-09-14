@@ -45,6 +45,7 @@ _TESTS = [
     "test_pdf_content.py",
     "test_ui_playwright.py",
     "test_seller_kind.py",
+    "test_health_check.py",
 ]
 
 # Паттерны для извлечения "Total: X Passed: Y Failed: Z"
