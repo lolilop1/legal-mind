@@ -10,8 +10,6 @@ import os
 import sys
 from unittest.mock import MagicMock, patch
 
-import httpx
-
 
 # ═══ Готовим env ДО импорта ═══
 # ВАЖНО: используем прямое присваивание, НЕ setdefault —
@@ -149,7 +147,7 @@ def main():
         _c9["n"] += 1
         if _c9["n"] < 3:
             raise llm.openai.APITimeoutError(
-                request=httpx.Request("POST", "http://test")
+                request=MagicMock()
             )
         return fake_resp
 
@@ -162,26 +160,30 @@ def main():
               "retry: текст получен после retry")
         check(_c9["n"] == 3, f"retry: 3 вызова (получено {_c9['n']})")
 
-    # ═══ 10. Retry: клиентская ошибка (401) НЕ ретраится ═══
+    # ═══ 10. Retry: клиентская ошибка НЕ ретраится ═══
+    # Подменяем _NO_RETRY_ERRORS — не зависим от httpx/openai версии
+    class _FakeAuthError(Exception):
+        pass
+
     _c10 = {"n": 0}
     def _client_error(*a, **kw):
         _c10["n"] += 1
-        resp401 = httpx.Response(401, request=httpx.Request("POST", "http://test"))
-        raise llm.openai.AuthenticationError("bad key", response=resp401, body=None)
+        raise _FakeAuthError("bad key")
 
     fc10 = MagicMock()
     fc10.responses.create.side_effect = _client_error
-    with patch.object(llm, "_get_client", return_value=fc10):
+    with patch.object(llm, "_NO_RETRY_ERRORS", (_FakeAuthError,)), \
+         patch.object(llm, "_get_client", return_value=fc10):
         r = llm.call_alice_flash("i", "u")
-        check("error" in r, "retry: 401 → error")
-        check(_c10["n"] == 1, f"retry: 401 без повторов (вызовов {_c10['n']})")
+        check("error" in r, "retry: клиентская ошибка → error")
+        check(_c10["n"] == 1, f"retry: клиентская без повторов (вызовов {_c10['n']})")
 
     # ═══ 11. Retry: 3 раза падает → error, 3 вызова ═══
     _c11 = {"n": 0}
     def _always_timeout(*a, **kw):
         _c11["n"] += 1
         raise llm.openai.APITimeoutError(
-            request=httpx.Request("POST", "http://test")
+            request=MagicMock()
         )
 
     fc11 = MagicMock()
