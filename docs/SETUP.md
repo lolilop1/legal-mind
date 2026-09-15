@@ -56,7 +56,7 @@ python -c "import secrets; print(secrets.token_hex(32))"
 6. Тесты:
    cd ..
    python tests\run_all.py
-   Ожидание: 32 файла, 2298 проверок, упало 0.
+   Ожидание: 33 файла, 2623 проверки, упало 0.
 
 7. Запуск:
    cd web
@@ -233,7 +233,7 @@ WAL для SQLite включается автоматически в `core/case_
 
 На каждый `git push` GitHub Actions запускает:
 
-- **test.yml** — 2298 тестов + Playwright UI на чистой Ubuntu 24.04.
+- **test.yml** — 2623 теста + Playwright UI на чистой Ubuntu 24.04.
   Actions: `checkout@v5`, `setup-python@v6`, `upload-artifact@v5`.
   Если красное — на прод не уедет.
 - **deploy.yml** — срабатывает через `workflow_run` только после

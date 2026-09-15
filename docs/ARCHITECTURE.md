@@ -89,7 +89,7 @@ PDF отдаётся пользователю
     │   └── .env
     │
     ├── scripts/                 — утилиты + smoke
-    ├── tests/                   — 32 файла, 2298 проверок
+    ├── tests/                   — 33 файла, 2623 проверки
     ├── docs/                    — документация
     ├── deploy/                  — инфраструктура
     └── .github/workflows/       — CI/CD
@@ -230,7 +230,7 @@ reg.ru                          | Домен legalmind.su + DNS
 ## CI/CD
 
 ### test.yml
-Push → GitHub Actions → 2298 тестов на Python 3.12 + chromium (Playwright).
+Push → GitHub Actions → 2623 теста на Python 3.12 + chromium (Playwright).
 Actions: `checkout@v5`, `setup-python@v6`, `upload-artifact@v5`.
 Если красное — деплой не запустится.
 
