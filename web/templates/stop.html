@@ -37,6 +37,14 @@
   <p class="stop-reason">{{ reason }}</p>
   {% endif %}
 
+  {% if suggest_uk %}
+  <div style="background: #e8f0ff; border-left: 4px solid #2f6df5; padding: 14px 18px; border-radius: 6px; margin: 20px 0; font-size: 14px; line-height: 1.5;">
+    <strong>💡 Что делать:</strong> на главной странице выберите карточку
+    <strong>«🏠 Проблема с УК»</strong> — там есть отдельные типы жалоб
+    на шум лифта, насоса, вентиляции и другого оборудования дома.
+  </div>
+  {% endif %}
+
   <div class="stop-actions">
     <a href="/" class="stop-back-btn">← Вернуться к форме</a>
   </div>

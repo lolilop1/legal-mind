@@ -63,6 +63,13 @@ _NEIGHBOR_RE = re.compile(
 
 _ALPHABET_RE = re.compile(r"[A-Za-zА-Яа-яЁё]")
 
+# Инженерный шум от общего имущества — это не «сосед шумит», а «УК не содержит дом».
+# Если упомянуто оборудование дома — редиректим юзера в модуль УК.
+_ENGINEERING_NOISE_RE = re.compile(
+    r"\bлифт|\bнасос|насосн|трансформатор|электрощит|гидроудар",
+    re.IGNORECASE,
+)
+
 
 def _normalize(text: object) -> str:
     s = re.sub(r"\s+", " ", str(text or "")).strip().lower()
@@ -70,13 +77,14 @@ def _normalize(text: object) -> str:
     return s
 
 
-def _stop(emergency: bool, reason: str) -> dict:
+def _stop(emergency: bool, reason: str, suggest_uk: bool = False) -> dict:
     return {
         "stop": True,
         "emergency": emergency,
         "stop_reason": reason,
         "описание_проблемы_формальное": None,
         "применимая_норма": None,
+        "suggest_uk": suggest_uk,
     }
 
 
@@ -123,6 +131,22 @@ def hard_pre_check(user_data: dict) -> Optional[dict]:
         return _stop(
             False,
             "Описание проблемы не содержит текста — опишите проблему словами.",
+        )
+
+    # Инженерный шум → не наш модуль. Участковый не поможет,
+    # нужна жалоба в УК (ненадлежащее содержание общего имущества).
+    if _ENGINEERING_NOISE_RE.search(problem) and not neighbor_signal(problem):
+        return _stop(
+            False,
+            "Похоже, шумит оборудование дома — лифт, насос, "
+            "трансформаторная или что-то подобное. Это не жалоба "
+            "участковому: шум от общего имущества — это ненадлежащее "
+            "содержание дома.\n\n"
+            "Жаловаться нужно в управляющую компанию (а если УК "
+            "бездействует — в ГЖИ). Вернитесь на главную и выберите "
+            "карточку «Проблема с УК» — там есть отдельные типы для "
+            "шума лифта, насоса, вентиляции и трансформаторной.",
+            suggest_uk=True,
         )
 
     if not noise_signal(problem):

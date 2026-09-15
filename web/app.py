@@ -439,6 +439,7 @@ def process_noise(user_data: dict) -> dict:
         return {
             "kind": "stop", "reason": hc["stop_reason"],
             "emergency": hc["emergency"], "stop_kind": kind, "retried": False,
+            "suggest_uk": hc.get("suggest_uk", False),
         }
 
     payload = {k: v for k, v in user_data.items() if k != "название"}
@@ -892,7 +893,8 @@ def submit():
         return render_template("stop.html",
                                title="Документ не составлен",
                                reason=result["reason"],
-                               emergency=result.get("emergency", False))
+                               emergency=result.get("emergency", False),
+                               suggest_uk=result.get("suggest_uk", False))
 
     if result["kind"] == "error":
         log.error("LLM error: %s", result["message"])

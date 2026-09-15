@@ -96,8 +96,8 @@
                  {% if form_data and form_data.get('problem_type') == 'noise' %}checked{% endif %}
                  onchange="lmOnTypeChange('noise')">
           <span class="type-card-icon">🔊</span>
-          <span class="type-card-title">Нарушение тишины</span>
-          <span class="type-card-desc">Музыка, ремонт, крики, лай собаки</span>
+          <span class="type-card-title">Сосед шумит</span>
+          <span class="type-card-desc">Музыка, ремонт, крики, лай собаки — от соседей</span>
         </label>
         <label class="type-card {% if form_data and form_data.get('problem_type') == 'consumer' %}type-card-active{% endif %}">
           <input type="radio" name="problem_type" value="consumer"
